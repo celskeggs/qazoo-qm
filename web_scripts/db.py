@@ -30,6 +30,7 @@ class CostObject(SQLBase):
     __tablename__ = "cost_object"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     description = sqlalchemy.Column(sqlalchemy.String(127), nullable=False)
+    venmo = sqlalchemy.Column(sqlalchemy.String(63), nullable=True)
 
 class ShoppingTrip(SQLBase):
     __tablename__ = "shopping_trip"
