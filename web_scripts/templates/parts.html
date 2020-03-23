@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Parts -- SIPB HWOPS</title>
+    <meta charset="UTF-8">
+    <style>
+    td { padding: 5px; }
+    .header td { border: 2px solid black; }
+    .gone { border: 0; }
+    </style>
+</head>
+<body>
+    <h2>SIPB HWOPS -- List of Parts</h2>
+
+    <p>Contact sipb-hwops [at] mit [dot] edu with questions and corrections.</p>
+
+    <p>{% if user %}Signed in as {{ user }}. <a href="{{ authlink }}">Sign out?</a>{% else %}<a href="{{ authlink }}">Sign in to edit</a>{% endif %}</p>
+
+    {% if user and not can_update %}<p>No edit permission.</p>{% endif %}
+
+    <p>Navigation: <a href="racks.py">Server Inventory</a> | Parts Inventory | <a href="manuals">Documents and Manuals</a></p>
+
+    <table border="1">
+    <tr class="header"><td>SKU</td><td>Stock</td><td>Description</td></tr>
+    {% for part, latest in parts %}<tr><td><a href="part.py?sku={{ part.sku }}">{{ part.sku }}</a></td><td>{% if latest %}{{ latest.new_count }}{% else %}0{% endif %}</td><td>{{ part.description }}</td></tr>{% endfor %}
+    {% if can_update %}<tr><td><a href="add-part.py">(add?)</a></td><td>--</td><td>--</td></tr>{% endif %}
+    </table>
+
+</body>
+</html>
+
