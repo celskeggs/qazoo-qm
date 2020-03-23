@@ -21,7 +21,7 @@ class Inventory(SQLBase):
     __tablename__ = "inventory"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-    quantity = sqlalchemy.Column(sqlalchemy.Decimal(18, 2), nullable=False)
+    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
     unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
     location = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     measurement = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
@@ -42,7 +42,7 @@ class Request(SQLBase):
     tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
     description = sqlalchemy.Column(sqlalchemy.String(127), nullable=True)
-    quantity = sqlalchemy.Column(sqlalchemy.Decimal(18, 2), nullable=True)
+    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=True)
     unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=True)
     substitution = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     contact = sqlalchemy.Column(sqlalchemy.String(127), nullable=False)
@@ -80,7 +80,7 @@ class RequestCharge(SQLBase):
 #    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
 #    tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
 #    itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-#    quantity = sqlalchemy.Column(sqlalchemy.Decimal(18, 2), nullable=False)
+#    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
 #    unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
 #    substitutions = sqlalchemy.Column(sqlalchemy.Text(), nullable=False)
 #    notes = sqlalchemy.Column(sqlalchemy.Text(), nullable=False)
@@ -90,9 +90,9 @@ class RequestCharge(SQLBase):
 #    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
 #    tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
 #    intentionid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
-#    quantity = sqlalchemy.Column(sqlalchemy.Decimal(18, 2), nullable=False)
+#    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
 #    unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
-#    cost_total_dollars = sqlalchemy.Column(sqlalchemy.Decimal(18, 2), nullable=False)
+#    cost_total_dollars = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
 
 with open(os.path.join(os.getenv("HOME"), ".my.cnf")) as f:
     password = dict(line.strip().split("=") for line in f if line.count("=") == 1)["password"]
