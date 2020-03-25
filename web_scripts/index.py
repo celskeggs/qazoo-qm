@@ -40,7 +40,8 @@ def process_index():
         return {"template": "noaccess.html", "user": user}
 
     write_access = (user == QM)
-    params = {field: arguments[field].value for field in cgi.FieldStorage()}
+    fields = cgi.FieldStorage()
+    params = {field: fields[field].value for field in fields}
 
     view = params.get("view", "") or "overview"
 
