@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
-# import cgitb; cgitb.enable()
+import cgitb; cgitb.enable()
 import cgi
 import db
 import os
