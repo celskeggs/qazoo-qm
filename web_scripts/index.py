@@ -24,7 +24,7 @@ def mode(f):
 
 @mode
 def overview(user, write_access, params):
-    return {"template": "index.html", "user": user, "write_access", write_access}
+    return {"template": "index.html", "user": user, "write_access": write_access}
 
 @mode
 def cost(user, write_access, params):
@@ -40,14 +40,14 @@ def process_index():
         return {"template": "noaccess.html", "user": user}
 
     write_access = (user == QM)
-    params = {field: arguments[field].value for field in cgi.FieldStorage()})
+    params = {field: arguments[field].value for field in cgi.FieldStorage()}
 
     view = params.get("view", "") or "overview"
 
     if view not in modes:
         return {"template": "notfound.html"}
 
-    return view(user, write_access, params)
+    return modes[view](user, write_access, params)
 
 def print_index():
     results = process_index()
