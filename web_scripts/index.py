@@ -44,6 +44,12 @@ def locations(user, write_access, params):
     rows = build_table(objects, "name")
     return simple_table("Location List", ["Name"], rows)
 
+@mode
+def item_types(user, write_access, params):
+    objects = db.query(db.ItemType).all()
+    rows = build_table(objects, "name", "standard_unit")
+    return simple_table("Item Type List", ["Name", "Standard Unit"], rows)
+
 def process_index():
     user = kerbparse.get_kerberos()
     if not user:
