@@ -1,5 +1,212 @@
 #!/usr/bin/python2
 # -*- coding: utf-8 -*-
-import main
+# import cgitb; cgitb.enable()
+import cgi
+import db
+import os
+import jinja2
+import kerbparse
+import moira
+import urlparse
+from collections import namedtuple
 
-main.print_index()
+QM = "cela"
+
+jenv = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"), autoescape=True)
+
+def get_authlink():
+    return ("https://" + os.environ["HTTP_HOST"].split(":")[0] + ":444" + os.environ["REQUEST_URI"])
+
+modes = {}
+
+def mode(f):
+    modes[f.__name__] = f
+
+@mode
+def overview(user, write_access, params):
+    return {"template": "index.html", "user": user, "write_access", write_access}
+
+@mode
+def cost(user, write_access, params):
+    objects = db.query(db.CostObject).all()
+    return {"template": "cost.html", "objects": objects}
+
+def process_index():
+    user = kerbparse.get_kerberos()
+    if not user:
+        return {"template": "login.html", "authlink": get_authlink()}
+
+    if not moira.has_access(user, "qazoo@mit.edu"):
+        return {"template": "noaccess.html", "user": user}
+
+    write_access = (user == QM)
+    params = {field: arguments[field].value for field in cgi.FieldStorage()})
+
+    view = params.get("view", "") or "overview"
+
+    if view not in modes:
+        return {"template": "notfound.html"}
+
+    return view(user, write_access, params)
+
+def print_index():
+    results = process_index()
+
+    print("Content-type: text/html\n")
+    print(jenv.get_template(results["template"]).render(**results).encode("utf-8"))
+
+def print_rack(rack_name):
+    user, authlink = get_auth()
+    can_update = is_hwop(user)
+    rack = db.get_rack(rack_name)
+    print("Content-type: text/html\n")
+    print(jenv.get_template("rack.html").render(rack=rack, user=user, authlink=authlink, can_update=can_update).encode("utf-8"))
+
+Device = namedtuple("Device", "name rack rack_first_slot rack_last_slot ip contact owner service_level model notes")
+DeviceDelta = namedtuple("DeviceDelta", "diff new old")
+
+def to_device(device):
+    return Device(name = device.name,
+                  rack = device.rack,
+                  rack_first_slot = device.rack_first_slot,
+                  rack_last_slot = device.rack_last_slot,
+                  ip = device.ip,
+                  contact = device.contact,
+                  owner = device.owner,
+                  service_level = device.service_level,
+                  model = device.model,
+                  notes = device.notes)
+
+def device_diff(old, new):
+    old, new = to_device(old), to_device(new)
+    return Device(*[(elem_old != elem_new) for elem_old, elem_new in zip(old, new)])
+
+def compute_device_changes(history):
+    deltas = []
+    old = Device(name="", rack="", rack_first_slot=0, rack_last_slot=0, ip="", contact=None, owner=None, service_level="", model="", notes="")
+    for new in history:
+        deltas.append(DeviceDelta(diff=device_diff(old, new), new=new, old=old))
+        old = new
+    return deltas
+
+def print_device(device_id):
+    user, authlink = get_auth()
+    device_history = db.get_device_history(device_id)
+
+    if not device_history:
+        print "Content-type: text/plain\n"
+        print "no such device ID", device_id
+        return
+
+    latest_device = device_history[-1]
+    latest_rack = db.get_rack(latest_device.rack)
+    can_update = can_edit(user, latest_device)
+
+    computed_history = compute_device_changes(device_history)
+    computed_history.reverse()
+    stella = moira.stella(latest_device.name)
+    print "Content-type: text/html\n"
+    print jenv.get_template("device.html").render(device=latest_device, rack=latest_rack, history=computed_history, user=user, authlink=authlink, can_update=can_update, stella=stella).encode("utf-8")
+
+def print_add(rack_name, slot):
+    user, authlink = get_auth()
+    can_update = is_hwop(user)
+    rack = db.get_rack(rack_name)
+    email = moira.user_to_email(user)
+    assert 1 <= slot <= rack.height
+    print("Content-type: text/html\n")
+    print(jenv.get_template("add.html").render(rack=rack, user=user, email=email, slot=slot, authlink=authlink, can_update=can_update).encode("utf-8"))
+
+def print_parts():
+    user, authlink = get_auth()
+    can_update = is_hwop(user)
+    parts = db.get_all_parts()
+    latest = db.get_latest_inventory()
+    all_skus = set(part.sku for part in parts)
+    assert all(sku in all_skus for sku in latest)
+    parts = sorted((part, latest.get(part.sku)) for part in parts)
+    print("Content-type: text/html\n")
+    print(jenv.get_template("parts.html").render(parts=parts, user=user, authlink=authlink, can_update=can_update).encode("utf-8"))
+
+def print_part(sku):
+    user, authlink = get_auth()
+    can_update = is_hwop(user)
+    part = db.get_part(sku)
+    inventory = sorted(db.get_inventory(sku), key=lambda i: -i.txid)
+    stock = inventory[0].new_count if inventory else 0
+    inventory = [(step, step.new_count - previous) for step, previous in zip(inventory, [step.new_count for step in inventory[1:]] + [0])]
+    print("Content-type: text/html\n")
+    print(jenv.get_template("part.html").render(part=part, stock=stock, inventory=inventory, user=user, authlink=authlink, can_update=can_update).encode("utf-8"))
+
+def print_add_part():
+    user, authlink = get_auth()
+    can_update = is_hwop(user)
+    print("Content-type: text/html\n")
+    print(jenv.get_template("add-part.html").render(user=user, authlink=authlink, can_update=can_update).encode("utf-8"))
+
+# TODO: figure out better error handling for everything
+def perform_add(params):
+    user = kerbparse.get_kerberos()
+    if not is_hwop(user):
+        raise Exception("no access")
+    rack = db.get_rack(params["rack"])
+    first, last = int(params["first"]), int(params["last"])
+    assert 1 <= first <= last <= rack.height
+    if not moira.is_email_valid_for_owner(params["owner"]):
+        raise Exception("bad owner")
+    devid = db.DeviceIDs()
+    db.add(devid)
+    dev = db.DeviceUpdates(id=devid.id, name=params["devicename"], rack=params["rack"], rack_first_slot=first, rack_last_slot=last, ip=params.get("ip", ""), contact=params["contact"], owner=params["owner"], service_level=params.get("service", ""), model=params.get("model", ""), notes=params.get("notes", ""), last_updated_by=user)
+    db.add(dev)
+    print("Content-type: text/html\n")
+    print(jenv.get_template("done.html").render(id=dev.id).encode("utf-8"))
+
+def perform_update(params):
+    user = kerbparse.get_kerberos()
+    device = db.get_device_latest(params["id"])
+    if not can_edit(user, device):
+        raise Exception("no access")
+    rack = db.get_rack(params["rack"])
+    first, last = int(params["first"]), int(params["last"])
+    assert 1 <= first <= last <= rack.height
+    if not moira.is_email_valid_for_owner(params["owner"]):
+        raise Exception("bad owner")
+    ndevice = db.DeviceUpdates(
+        id = device.id,
+        name = params["devicename"],
+        rack = params["rack"],
+        rack_first_slot = first,
+        rack_last_slot = last,
+        ip = params.get("ip", ""),
+        contact = params["contact"],
+        owner = params["owner"],
+        service_level = params.get("service", ""),
+        model = params.get("model", ""),
+        notes = params.get("notes", ""),
+        last_updated_by = user,
+    )
+    db.add(ndevice)
+    db.session.commit()
+    print("Content-type: text/html\n")
+    print(jenv.get_template("done.html").render(id=device.id).encode("utf-8"))
+
+def perform_add_part(params):
+    user = kerbparse.get_kerberos()
+    if not is_hwop(user):
+        raise Exception("no access")
+    part = db.Parts(sku=params["sku"], description=params.get("description", ''), notes=params.get("notes", ""), last_updated_by=user)
+    db.add(part)
+    print("Content-type: text/html\n")
+    print(jenv.get_template("done-part.html").render(sku=part.sku).encode("utf-8"))
+
+def perform_update_stock(params):
+    user = kerbparse.get_kerberos()
+    if not is_hwop(user):
+        raise Exception("no access")
+    update = db.Inventory(sku=params["sku"], new_count=int(params["count"]), comment=params.get("comment", ""), submitted_by=user)
+    db.add(update)
+    print("Content-type: text/html\n")
+    print(jenv.get_template("done-part.html").render(sku=update.sku).encode("utf-8"))
+
+if __name__ == "__main__":
+    print_index()
