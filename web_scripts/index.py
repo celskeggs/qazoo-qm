@@ -27,7 +27,7 @@ def overview(user, write_access, params):
     return {"template": "index.html", "user": user, "write_access": write_access}
 
 def build_table(objects, *columns):
-    return [[getattr(obj, col) for col in columns] for obj in objects]
+    return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
 def simple_table(title, columns, rows):
     return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows}
@@ -49,6 +49,22 @@ def item_types(user, write_access, params):
     objects = db.query(db.ItemType).all()
     rows = build_table(objects, "name", "standard_unit")
     return simple_table("Item Type List", ["Name", "Standard Unit"], rows)
+
+def item_names_by_uids():
+    return {it.uid: it.name for it in db.query(db.ItemType).all()}
+
+def locations_by_uids():
+    return {loc.uid: loc.name for loc in db.query(db.Location).all()}
+
+@mode
+def inventory(user, write_access, params):
+    items = item_names_by_uids()
+    locations = locations_by_uids()
+    objects = db.query(db.Inventory).all()
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: "%s %s" % (i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement")
+    rows.sort(key=lambda row: (row[0], row[2]))
+    # TODO: remove updated entries that end up looking like duplicates
+    return simple_table("Item Type List", ["Name", "Quantity", "Location", "Last Measured At"], rows)
 
 def process_index():
     user = kerbparse.get_kerberos()
