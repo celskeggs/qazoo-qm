@@ -23,13 +23,14 @@ class Inventory(SQLBase):
     itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
     unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
-    location = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
+    locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     measurement = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
 
 class CostObject(SQLBase):
     __tablename__ = "cost_object"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     description = sqlalchemy.Column(sqlalchemy.String(127), nullable=False)
+    kerberos = sqlalchemy.Column(sqlalchemy.String(8), nullable=True)
     venmo = sqlalchemy.Column(sqlalchemy.String(63), nullable=True)
 
 class ShoppingTrip(SQLBase):
@@ -42,6 +43,7 @@ class Request(SQLBase):
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
+    costid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     description = sqlalchemy.Column(sqlalchemy.String(127), nullable=True)
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=True)
     unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=True)
@@ -51,12 +53,6 @@ class Request(SQLBase):
     comments = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     submitted_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
     updated_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
-
-class RequestCharge(SQLBase):
-    __tablename__ = "request_charge"
-    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
-    requestid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-    costid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
 
 #class AisleInfo(SQLBase):
 #    __tablename__ == "aisle_info"
@@ -102,6 +98,9 @@ sqlengine = sqlalchemy.create_engine("mysql://cela:%s@sql.mit.edu/cela+qazoo" % 
 SQLBase.metadata.bind = sqlengine
 
 session = sqlalchemy.orm.sessionmaker(bind=sqlengine)()
+
+def query(x):
+    return session.query(x)
 
 #def get_all_racks():
 #    return session.query(Racks).all()
