@@ -27,7 +27,7 @@ def overview(user, write_access, params):
     return {"template": "index.html", "user": user, "write_access": write_access}
 
 def build_table(objects, *columns):
-    return [[obj[col] for col in columns] for obj in objects]
+    return [[getattr(obj, col) for col in columns] for obj in objects]
 
 def simple_table(title, columns, rows):
     return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows}
