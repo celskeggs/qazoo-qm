@@ -26,10 +26,23 @@ def mode(f):
 def overview(user, write_access, params):
     return {"template": "index.html", "user": user, "write_access": write_access}
 
+def build_table(objects, *columns):
+    return [[obj[col] for col in columns] for obj in objects]
+
+def simple_table(title, columns, rows):
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows}
+
 @mode
 def cost(user, write_access, params):
     objects = db.query(db.CostObject).all()
-    return {"template": "cost.html", "objects": objects}
+    rows = build_table(objects, "description", "kerberos", "venmo")
+    return simple_table("Cost Object List", ["Description", "Kerberos", "Venmo"], rows)
+
+@mode
+def locations(user, write_access, params):
+    objects = db.query(db.Location).all()
+    rows = build_table(objects, "name")
+    return simple_table("Location List", ["Name"], rows)
 
 def process_index():
     user = kerbparse.get_kerberos()
@@ -43,12 +56,12 @@ def process_index():
     fields = cgi.FieldStorage()
     params = {field: fields[field].value for field in fields}
 
-    view = params.get("view", "") or "overview"
+    mode = params.get("mode", "") or "overview"
 
-    if view not in modes:
+    if mode not in modes:
         return {"template": "notfound.html"}
 
-    return modes[view](user, write_access, params)
+    return modes[mode](user, write_access, params)
 
 def print_index():
     results = process_index()

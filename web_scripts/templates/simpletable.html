@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>QQMI {{ title }}</title>
+    <meta charset="UTF-8">
+    <style>
+    td { padding: 5px; }
+    .header td { border: 2px solid black; }
+    </style>
+</head>
+<body>
+    <h2>{{ title }}</h2>
+
+    <p><a href="?mode=overview">Back to overview</a></p>
+
+    <table border="1">
+    <tr class="header">{% for column in columns %}<td>{{ column }}</td>{% endfor %}</tr>
+    {% for row in rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+    </table>
+</body>
+</html>
+
