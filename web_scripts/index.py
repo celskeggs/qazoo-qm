@@ -57,6 +57,7 @@ def locations_by_uids():
     return {loc.uid: loc.name for loc in db.query(db.Location).all()}
 
 def render_quantity(quantity, unit):
+    quantity = str(quantity)
     fq = float(quantity)
     if not fq:
         return "none"
