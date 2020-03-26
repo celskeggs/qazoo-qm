@@ -85,7 +85,7 @@ def inventory(user, write_access, params):
 def trips(user, write_access, params):
     objects = db.query(db.ShoppingTrip).all()
     rows = build_table(objects, "date")
-    urls = build_table(objects, lambda i: "?view=requests&trip=%d" % i.uid)
+    urls = ["?view=requests&trip=%d" % i.uid for i in objects]
     return simple_table("Shopping Trip List", ["Date"], rows, urls)
 
 @mode
