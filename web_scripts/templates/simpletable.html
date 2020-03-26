@@ -15,7 +15,7 @@
 
     <table border="1">
     <tr class="header">{% for column in columns %}<td>{{ column }}</td>{% endfor %}</tr>
-    {% for row in rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+    {% for row in rows %}<tr>{% for url, cell in row %}<td>{% if url %}<a href="{{ url }}">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>{% endfor %}
     </table>
 </body>
 </html>

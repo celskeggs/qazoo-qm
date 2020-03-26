@@ -29,8 +29,11 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows):
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows}
+def simple_table(title, columns, rows, urls=None, urli=0):
+    if urls is None:
+        urls = [None] * len(rows)
+    rows = [[(url, cell) if ci == urli else (None, cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "urls": urls}
 
 @mode
 def cost(user, write_access, params):
@@ -56,6 +59,9 @@ def item_names_by_uids():
 def locations_by_uids():
     return {loc.uid: loc.name for loc in db.query(db.Location).all()}
 
+def cost_objects_by_uids():
+    return {co.uid: co.description for co in db.query(db.CostObject).all()}
+
 def render_quantity(quantity, unit):
     quantity = str(quantity)
     fq = float(quantity)
@@ -73,7 +79,24 @@ def inventory(user, write_access, params):
     rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: render_quantity(i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement")
     rows.sort(key=lambda row: (row[0], row[2]))
     # TODO: remove updated entries that end up looking like duplicates
-    return simple_table("Item Type List", ["Name", "Quantity", "Location", "Last Measured At"], rows)
+    return simple_table("Inventory", ["Name", "Quantity", "Location", "Last Inventoried At"], rows)
+
+@mode
+def trips(user, write_access, params):
+    objects = db.query(db.ShoppingTrip).all()
+    rows = build_table(objects, "date")
+    urls = build_table(objects, lambda i: "?view=requests&trip=%d" % i.uid)
+    return simple_table("Shopping Trip List", ["Date"], rows, urls)
+
+@mode
+def requests(user, write_access, params):
+    if "trip" not in params or not params["trip"].isdigit():
+        return {"template": "notfound.html"}
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+    objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).filter_by(db.Request.submitted_at).all()
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "updated_at")
+    return simple_table("Item Type List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "Updated At"], rows)
 
 def process_index():
     user = kerbparse.get_kerberos()
