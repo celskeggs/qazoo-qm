@@ -38,6 +38,16 @@ class ShoppingTrip(SQLBase):
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     date = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
 
+class RequestState(enum.Enum):
+    draft = 1
+    submitted = 2
+    accepted = 3
+    to_purchase = 4
+    to_reserve = 5
+    in_inventory = 6
+    retracted = 7
+    rejected = 8
+
 class Request(SQLBase):
     __tablename__ = "request"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
@@ -53,6 +63,7 @@ class Request(SQLBase):
     comments = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     submitted_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
     updated_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
+    state = sqlalchemy.Column(sqlalchemy.Enum(RequestState), nullable=False)
 
 #class AisleInfo(SQLBase):
 #    __tablename__ == "aisle_info"

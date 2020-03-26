@@ -95,8 +95,12 @@ def requests(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "updated_at")
-    return simple_table("Item Type List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "Updated At"], rows)
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", lambda i: repr(i.state), "updated_at")
+    return simple_table("Item Type List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "repr(State)", "Updated At"], rows)
+
+@mode
+def request_entry(user, write_access, params):
+    pass
 
 def process_index():
     user = kerbparse.get_kerberos()
