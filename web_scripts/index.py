@@ -85,7 +85,7 @@ def inventory(user, write_access, params):
 def trips(user, write_access, params):
     objects = db.query(db.ShoppingTrip).all()
     rows = build_table(objects, "date")
-    urls = ["?view=requests&trip=%d" % i.uid for i in objects]
+    urls = ["?mode=requests&trip=%d" % i.uid for i in objects]
     return simple_table("Shopping Trip List", ["Date"], rows, urls)
 
 @mode
@@ -94,7 +94,7 @@ def requests(user, write_access, params):
         return {"template": "notfound.html"}
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
-    objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).filter_by(db.Request.submitted_at).all()
+    objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).order_by(db.Request.submitted_at).all()
     rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "updated_at")
     return simple_table("Item Type List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "Updated At"], rows)
 
