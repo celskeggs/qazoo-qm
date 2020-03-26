@@ -61,7 +61,7 @@ def inventory(user, write_access, params):
     items = item_names_by_uids()
     locations = locations_by_uids()
     objects = db.query(db.Inventory).all()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: "%s %s" % (i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement")
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: ("%s %s" % (float(i.quantity), i.unit) if float(i.quantity) else "none"), lambda i: locations.get(i.locationid, "#REF?"), "measurement")
     rows.sort(key=lambda row: (row[0], row[2]))
     # TODO: remove updated entries that end up looking like duplicates
     return simple_table("Item Type List", ["Name", "Quantity", "Location", "Last Measured At"], rows)
