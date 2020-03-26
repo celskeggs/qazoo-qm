@@ -2,7 +2,6 @@ import os
 import sqlalchemy
 import sqlalchemy.ext.declarative
 import sqlalchemy.orm
-import enum
 
 SQLBase = sqlalchemy.ext.declarative.declarative_base()
 
@@ -38,15 +37,16 @@ class ShoppingTrip(SQLBase):
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     date = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
 
-class RequestState(enum.Enum):
-    draft = 1
-    submitted = 2
-    accepted = 3
-    to_purchase = 4
-    to_reserve = 5
-    in_inventory = 6
-    retracted = 7
-    rejected = 8
+class RequestState:
+    draft = "draft"
+    submitted = "submitted"
+    accepted = "accepted"
+    to_purchase = "to_purchase"
+    to_reserve = "to_reserve"
+    in_inventory = "in_inventory"
+    retracted = "retracted"
+    rejected = "rejected"
+    VALUES = [draft, submitted, accepted, to_purchase, to_reserve, in_inventory, retracted, rejected]
 
 class Request(SQLBase):
     __tablename__ = "request"
@@ -63,7 +63,7 @@ class Request(SQLBase):
     comments = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     submitted_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
     updated_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
-    state = sqlalchemy.Column(sqlalchemy.Enum(RequestState), nullable=False)
+    state = sqlalchemy.Column(sqlalchemy.Enum(RequestState.VALUES), nullable=False)
 
 #class AisleInfo(SQLBase):
 #    __tablename__ == "aisle_info"
