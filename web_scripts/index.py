@@ -289,7 +289,8 @@ def request_submit(user, write_access, params):
         # needed to make sure any edits from before actually get applied; db.add does this automatically
         db.commit()
 
-    return request_entry(user, write_access, {})
+    return {"template": "error.html", "message": "considered: " + repr(requests)}
+    #return request_entry(user, write_access, {})
 
 @mode
 def debug(user, write_access, params):
