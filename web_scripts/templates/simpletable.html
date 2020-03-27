@@ -60,7 +60,7 @@
         <td>
             {% if ctype == "url" %}
                 {% if cell %}
-                <a href="{{ url }}">{{ cell }}</a>
+                <a href="{{ cname }}">{{ cell }}</a>
                 {% endif %}
             {% elif ctype == "dropdown" %}
             <select name="{{ cname }}">
