@@ -17,6 +17,9 @@
 
     {{ instructions|safe }}
 
+    {% if action %}
+    <form action="{{ action }}">
+    {% endif %}
     <table border="1">
     <tr class="header">
         {% for column in columns %}
@@ -47,9 +50,9 @@
                 {% endfor %}
             </select>
             {% elif ctype == "text" %}
-            <div><input type="text" value="{{ column }}" name="{{ cname }}"></div>
+            <input type="text" value="{{ column }}" name="{{ cname }}">
             {% elif ctype == "date" %}
-            <div><input type="date" value="{{ column }}" name="{{ cname }}"></div>
+            <input type="date" value="{{ column }}" name="{{ cname }}">
             {% else %}
             {{ column }}
             {% endif %}
@@ -58,6 +61,10 @@
     </tr>
     {% endif %}
     </table>
+    {% if action %}
+    <input type="submit" value="UPDATE">
+    </form>
+    {% endif %}
 </body>
 </html>
 

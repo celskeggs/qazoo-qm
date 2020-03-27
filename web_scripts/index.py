@@ -29,7 +29,7 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0, instructions=None, creation=None):
+def simple_table(title, columns, rows, urls=None, urli=0, instructions=None, creation=None, action=None):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[(url, cell) if ci == urli else (None, cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
@@ -37,7 +37,7 @@ def simple_table(title, columns, rows, urls=None, urli=0, instructions=None, cre
         instructions = ""
     else:
         instructions = jenv.get_template(instructions).render()
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "urls": urls, "instructions": instructions, "creation": creation}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "urls": urls, "instructions": instructions, "creation": creation, "action": action}
 
 @mode
 def cost(user, write_access, params):
@@ -140,7 +140,11 @@ def request_entry(user, write_access, params):
         ("text", "comments", ""),
         ("", "", "draft"),
     ]
-    return simple_table("Request Entry List for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions="request.html", creation=creation)
+    return simple_table("Request Entry List for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions="request.html", creation=creation, action="?mode=debug")
+
+@mode
+def debug(user, write_access, params):
+    return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted(params.items()))
 
 def process_index():
     user = kerbparse.get_kerberos()
