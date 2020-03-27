@@ -88,6 +88,19 @@ def render_quantity(quantity, unit):
         fq = int(fq)
     return "%s %s" % (fq, unit)
 
+def parse_quantity(quantity):
+    parts = quantity.strip().split(" ", 1)
+    if len(parts) == 1:
+        parts += ["units"]
+    quantity, unit = parts[0].strip(), parts[1].strip()
+    try:
+        quantity = float(quantity)
+    except ValueError:
+        return None
+    if not unit.replace(" ","").isalpha():
+        return None
+    return quantity, unit.lower()
+
 @mode
 def inventory(user, write_access, params):
     items = item_names_by_uids()
