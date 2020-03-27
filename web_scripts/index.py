@@ -22,6 +22,7 @@ modes = {}
 
 def mode(f):
     modes[f.__name__] = f
+    return f
 
 @mode
 def overview(user, write_access, params):
