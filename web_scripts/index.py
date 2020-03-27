@@ -201,7 +201,7 @@ def request_entry(user, write_access, params):
     }
     return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid)
 
-def create_request_from_params(params, suffix, tripid, allowable_cost_ids):
+def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids):
     costid = int_or_none(params, "cost_object" + suffix)
     if not costid:
         return "no cost ID specified"
@@ -230,7 +230,7 @@ def create_request_from_params(params, suffix, tripid, allowable_cost_ids):
         quantity = quantity,
         unit = unit,
         substitution = param_as_str(params, "substitutions" + suffix, "[no entry]"),
-        contact = user,
+        contact = contact,
         coop_date = param_as_str(params, "coop_date" + suffix, None),
         comments = param_as_str(params, "comments" + suffix, ""),
         submitted_at = now,
@@ -273,14 +273,14 @@ def request_submit(user, write_access, params):
         if request.uid not in uids:
             continue
 
-        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, allowable_cost_ids=allowable_cost_ids)
+        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
         if updated_request is None:
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
             return {"template": "error.html", "message": updated_request}
         merge_changes(request, updated_request)
 
-    new_request = create_request_from_params(params, ".new", tripid=trip.uid, allowable_cost_ids=allowable_cost_ids)
+    new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
     if type(new_request) == str:
         return {"template": "error.html", "message": new_request}
     if new_request is not None:
