@@ -63,9 +63,9 @@ def item_names_by_uids():
 def locations_by_uids():
     return {loc.uid: loc.name for loc in db.query(db.Location).all()}
 
-def primary_shopping_trip_id():
+def primary_shopping_trip():
     st = db.query(db.ShoppingTrip).filter_by(primary=True).all()
-    return None if len(st) != 1 else st[0].uid
+    return None if len(st) != 1 else st[0]
 
 def cost_objects_by_uids():
     return {co.uid: co.description for co in db.query(db.CostObject).all()}
@@ -117,9 +117,10 @@ def requests(user, write_access, params):
 
 @mode
 def request_entry(user, write_access, params):
-    tripid = primary_shopping_trip_id()
-    if tripid is None:
+    trip = primary_shopping_trip()
+    if trip is None:
         return {"template": "error.html", "message": "no shopping trip was marked as primary"}
+    trip_date = str(trip.date)
     mycostid = cost_object_for_user(user)
     if mycostid is None:
         return {"template": "error.html", "message": "could not find cost object for user %s" % user}
@@ -127,21 +128,21 @@ def request_entry(user, write_access, params):
 
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
-    objects = db.query(db.Request).filter_by(tripid=tripid, contact=user).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
+    objects = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).order_by(db.Request.submitted_at).all()
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "state")
     creation = [
-        ("dropdown", "formal_name", sorted(items.items(), key=lambda x: x[1])),
+        ("dropdown", "formal_name", [("", "")] + sorted(items.items(), key=lambda x: x[1])),
         ("text", "informal_name", ""),
         ("text", "quantity", "0 oz"),
         ("text", "substitutions", "No substitutions accepted."),
-        ("dropdown", "cost_object", sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids], key=lambda x: x[1])),
+        ("dropdown", "cost_object", sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])),
         ("date", "coop_date", ""),
         ("text", "comments", ""),
         ("", "", "now"),
-        ("", "", "DRAFT"),
+        ("", "", "draft"),
         ("", "", "now"),
     ]
-    return simple_table("Request Entry List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions="request.html", creation=creation)
+    return simple_table("Request Entry List for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions="request.html", creation=creation)
 
 def process_index():
     user = kerbparse.get_kerberos()
