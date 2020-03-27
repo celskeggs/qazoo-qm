@@ -96,7 +96,7 @@ def render_quantity(quantity, unit):
 
 def parse_quantity(quantity):
     if type(quantity) != str:
-        return None
+        return None, None
     parts = quantity.strip().split(" ", 1)
     if len(parts) == 1:
         parts += ["units"]
@@ -104,9 +104,9 @@ def parse_quantity(quantity):
     try:
         quantity = float(quantity)
     except ValueError:
-        return None
+        return None, None
     if not unit.replace(" ","").isalpha():
-        return None
+        return None, None
     return quantity, unit
 
 def get_by_id(items, uid):
