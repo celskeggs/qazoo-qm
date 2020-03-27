@@ -48,6 +48,41 @@ class RequestState:
     retracted = "retracted"
     rejected = "rejected"
     VALUES = [draft, submitted, accepted, to_purchase, to_reserve, in_inventory, retracted, rejected]
+    # allowable new states by "old state" and then "is QM"
+    ALLOWABLE = {
+        draft: [
+            [submitted, retracted],
+            [submitted, retracted, rejected],
+        ],
+        submitted: [
+            [draft, retracted],
+            [draft, retracted, rejected, accepted],
+        ],
+        accepted: [
+            [],
+            [submitted, rejected, to_purchase, to_reserve, in_inventory],
+        ],
+        to_purchase: [
+            [],
+            [rejected, accepted, to_reserve, in_inventory],
+        ],
+        to_reserve: [
+            [],
+            [rejected, accepted, to_purchase, in_inventory],
+        ],
+        in_inventory: [
+            [],
+            [rejected, accepted, to_purchase, to_reserve],
+        ],
+        retracted: [
+            [],
+            [draft, submitted, accepted],
+        ],
+        rejected: [
+            [],
+            [draft, submitted, accepted],
+        ],
+    }
 
 class Request(SQLBase):
     __tablename__ = "request"

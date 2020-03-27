@@ -156,6 +156,12 @@ def requests(user, write_access, params):
     rows = build_table(objects, lambda i: get_by_id(items, i.itemid), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
     return simple_table("Request Review List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows)
 
+def allowable_states(request, qm=False):
+    return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
+
+def state_options(request, qm=False):
+    return [(state, state) for state in allowable_states(request, qm=qm)]
+
 @mode
 def request_entry(user, write_access, params):
     trip = primary_shopping_trip()
@@ -176,13 +182,9 @@ def request_entry(user, write_access, params):
     default_date = (objects[-1].coop_date if objects else "")
     default_substitutions = (objects[-1].substitution if objects else "No substitutions accepted.")
 
-    # TODO: restrict these options based on allowable state transitions
-    state_options = [(state, state) for state in db.RequestState.VALUES]
-
     optionsets = {
         "formal_options": formal_options,
         "cost_objects": cost_objects,
-        "state_options": state_options,
     }
 
     rows = [
@@ -194,7 +196,8 @@ def request_entry(user, write_access, params):
             ("dropdown-optionset", "cost_object.%d" % i.uid, "cost_objects",   i.costid                           ),
             ("date",                 "coop_date.%d" % i.uid, "",               str(i.coop_date)                   ),
             ("text",                  "comments.%d" % i.uid, "",               i.comments                         ),
-            ("dropdown-optionset",       "state.%d" % i.uid, "state_options",  i.state                            ),
+        # note: state_options is called with QM=false because while QMs do have special powers, they should not be used from this part of the interface
+            ("dropdown",                 "state.%d" % i.uid, state_options(i), i.state                            ),
         ] for i in objects
     ]
     creation = [
@@ -214,7 +217,7 @@ def request_entry(user, write_access, params):
     }
     return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
 
-def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allow_set_state):
+def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allowable_states):
     costid = int_or_none(params, "cost_object" + suffix)
     if not costid:
         return "no cost ID specified"
@@ -233,12 +236,9 @@ def create_request_from_params(params, suffix, tripid, contact, allowable_cost_i
     if quantity is None:
         return "quantity not provided in required <NUMBER> <UNIT> format"
 
-    if allow_set_state:
-        state = param_as_str(params, "state" + suffix, db.RequestState.draft)
-        if state not in db.RequestState.VALUES:
-            return "invalid state: %s" % repr(state)
-    else:
-        state = db.RequestState.draft
+    state = param_as_str(params, "state" + suffix, db.RequestState.draft)
+    if state not in allowable_states:
+        return "invalid state: %s" % repr(state)
 
     now = datetime.datetime.now()
 
@@ -304,7 +304,7 @@ def request_submit(user, write_access, params):
         if request.uid not in uids:
             continue
 
-        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allow_set_state=True)
+        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request))
         if updated_request is None:
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
@@ -312,7 +312,7 @@ def request_submit(user, write_access, params):
         if merge_changes(request, updated_request):
             any_edits = True
 
-    new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allow_set_state=False)
+    new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=[db.RequestState.draft])
     if type(new_request) == str:
         return {"template": "error.html", "message": new_request}
     if new_request is not None:
