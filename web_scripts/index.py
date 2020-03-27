@@ -143,7 +143,7 @@ def request_entry(user, write_access, params):
         ("text", "informal_name", ""),
         ("text", "quantity", "0 oz"),
         ("text", "substitutions", "No substitutions accepted."),
-        ("dropdown", "cost_object", sorted([(costid, description) for cost in costs.items() if costid in allowable_cost_ids], key=lambda x: x[1])),
+        ("dropdown", "cost_object", sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids], key=lambda x: x[1])),
         ("date", "coop_date", ""),
         ("text", "comments", ""),
         ("", "", "now"),
