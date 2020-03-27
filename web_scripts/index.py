@@ -174,6 +174,8 @@ def request_entry(user, write_access, params):
 
     optionsets = {
         "formal_options": formal_options,
+        "cost_objects": cost_objects,
+        "state_options" state_options,
     }
 
     # TODO: restrict these options based on allowable state transitions
@@ -184,10 +186,10 @@ def request_entry(user, write_access, params):
             ("text",             "informal_name.%d" % i.uid, "",               i.description or ""                ),
             ("text",                  "quantity.%d" % i.uid, "",               render_quantity(i.quantity, i.unit)),
             ("text",             "substitutions.%d" % i.uid, "",               i.substitution                     ),
-            ("dropdown",           "cost_object.%d" % i.uid, cost_objects,     i.costid                           ),
+            ("dropdown-optionset", "cost_object.%d" % i.uid, "cost_objects",   i.costid                           ),
             ("date",                 "coop_date.%d" % i.uid, "",               str(i.coop_date)                   ),
             ("text",                  "comments.%d" % i.uid, "",               i.comments                         ),
-            ("dropdown",                 "state.%d" % i.uid, state_options,    i.state                            ),
+            ("dropdown-optionset",       "state.%d" % i.uid, "state_options",  i.state                            ),
         ] for i in objects
     ]
     creation = [
@@ -195,7 +197,7 @@ def request_entry(user, write_access, params):
         ("text",             "informal_name.new", ""                          ),
         ("text",                  "quantity.new", "0 oz"                      ),
         ("text",             "substitutions.new", "No substitutions accepted."),
-        ("dropdown",           "cost_object.new", cost_objects                ),
+        ("dropdown-optionset", "cost_object.new", "cost_objects"              ),
         ("date",                 "coop_date.new", ""                          ),
         ("text",                  "comments.new", ""                          ),
         ("",                                  "", "draft"                     ),
