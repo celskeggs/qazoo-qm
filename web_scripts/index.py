@@ -249,7 +249,7 @@ def request_submit(user, write_access, params):
 
 @mode
 def debug(user, write_access, params):
-    return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([k, (sorted(v) if type(v) == list else v) for k,v in params.items()]))
+    return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([(k, sorted(v) if type(v) == list else v) for k, v in params.items()]))
 
 def process_index():
     user = kerbparse.get_kerberos()
