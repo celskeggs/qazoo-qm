@@ -210,7 +210,7 @@ def request_entry(user, write_access, params):
     }
     return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
 
-def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids):
+def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allow_set_state):
     costid = int_or_none(params, "cost_object" + suffix)
     if not costid:
         return "no cost ID specified"
@@ -229,6 +229,13 @@ def create_request_from_params(params, suffix, tripid, contact, allowable_cost_i
     if quantity is None:
         return "quantity not provided in required <NUMBER> <UNIT> format"
 
+    if allow_set_state:
+        state = param_as_str(params, "state" + suffix, db.RequestState.draft)
+        if state not in db.RequestState.VALUES:
+            return "invalid state: %s" % repr(state)
+    else:
+        state = db.RequestState.draft
+
     now = datetime.datetime.now()
 
     return db.Request(
@@ -244,7 +251,7 @@ def create_request_from_params(params, suffix, tripid, contact, allowable_cost_i
         comments = param_as_str(params, "comments" + suffix, ""),
         submitted_at = now,
         updated_at = now,
-        state = db.RequestState.draft,
+        state = state,
     )
 
 def merge_changes(target, source):
