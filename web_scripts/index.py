@@ -155,7 +155,7 @@ def request_entry(user, write_access, params):
     formal_options = [("", "")] + sorted(items.items(), key=lambda x: x[1])
     cost_objects = sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])
     # TODO: restrict these options based on allowable state transitions
-    state_options = {state: state for state in db.RequestState.VALUES}
+    state_options = [(state, state) for state in db.RequestState.VALUES]
     rows = build_table(objects,
         lambda i: ("dropdown", "formal_name", formal_options, i.itemid or ""),
         lambda i: ("text", "informal_name", "", i.description),
