@@ -14,7 +14,7 @@ from collections import namedtuple
 
 QM = "cela"
 
-jenv = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"), autoescape=True)
+jenv = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"), autoescape=True, trim_blocks=True, lstrip_blocks=True)
 
 def get_authlink():
     return ("https://" + os.environ["HTTP_HOST"].split(":")[0] + ":444" + os.environ["REQUEST_URI"])
