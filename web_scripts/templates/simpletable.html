@@ -13,9 +13,54 @@
 
     <p><a href="?mode=overview">Back to overview</a></p>
 
+    {% if instructions %}
+    <ul>
+    {% for line in instructions.strip().split('\n') %}
+    <li>{{ line.strip() }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+
     <table border="1">
-    <tr class="header">{% for column in columns %}<td>{{ column }}</td>{% endfor %}</tr>
-    {% for row in rows %}<tr>{% for url, cell in row %}<td>{% if url %}<a href="{{ url }}">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</td>{% endfor %}</tr>{% endfor %}
+    <tr class="header">
+        {% for column in columns %}
+        <td>{{ column }}</td>
+        {% endfor %}
+    </tr>
+    {% for row in rows %}
+    <tr>
+        {% for url, cell in row %}
+        <td>
+            {% if url %}
+            <a href="{{ url }}">{{ cell }}</a>
+            {% else %}
+            {{ cell }}
+            {% endif %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endfor %}
+    {% if creation %}
+    <tr>
+        {% for ctype, cname, column in creation %}
+        <td>
+            {% if ctype == "dropdown" %}
+            <select name="{{ cname }}">
+                {% for optionname, optionvalue in column %}
+                <option value="{{ optionname }}">{{ optionvalue }}</option>
+                {% endfor %}
+            </select>
+            {% elif ctype == "text"}
+            <input type="text" value="{{ column }}" name="{{ cname }}">
+            {% elif ctype == "date"}
+            <input type="date" value="{{ column }}" name="{{ cname }}">
+            {% else %}
+            {{ column }}
+            {% endif %}
+        </td>
+        {% endfor %}
+    </tr>
+    {% endif %}
     </table>
 </body>
 </html>

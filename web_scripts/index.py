@@ -29,11 +29,11 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0):
+def simple_table(title, columns, rows, urls=None, urli=0, instructions=None, creation=None):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[(url, cell) if ci == urli else (None, cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "urls": urls}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "urls": urls, "instructions": instructions, "creation": creation}
 
 @mode
 def cost(user, write_access, params):
@@ -61,6 +61,13 @@ def locations_by_uids():
 
 def cost_objects_by_uids():
     return {co.uid: co.description for co in db.query(db.CostObject).all()}
+
+def cost_objects_for_no_user():
+    return [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
+
+def cost_object_for_user(user):
+    co = db.query(db.CostObject).filter_by(kerberos=user).one_or_none()
+    return None if co is None else co.uid
 
 def render_quantity(quantity, unit):
     quantity = str(quantity)
@@ -92,15 +99,54 @@ def trips(user, write_access, params):
 def requests(user, write_access, params):
     if "trip" not in params or not params["trip"].isdigit():
         return {"template": "notfound.html"}
+    tripid = int(params["trip"])
+
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", lambda i: repr(i.state), "updated_at")
-    return simple_table("Item Type List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "repr(State)", "Updated At"], rows)
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
+    return simple_table("Request Review List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows)
 
 @mode
 def request_entry(user, write_access, params):
-    pass
+    if "trip" not in params or not params["trip"].isdigit():
+        return {"template": "notfound.html"}
+    tripid = int(params["trip"])
+    mycostid = cost_object_for_user(user)
+    if mycostid is None:
+        return {"template": "notfound.html"}
+    allowable_cost_ids = cost_objects_for_no_user() + [mycostid]
+
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+    objects = db.query(db.Request).filter_by(tripid=tripid, contact=user).order_by(db.Request.submitted_at).all()
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
+    instructions = """
+        Use this form to submit your items, one per row.
+        Please limit the quantity of personal supplies you request, especially supplies that require fridge space.
+        When possible, please request supplies as communal instead of personal.
+        Personal supplies MUST be requested in quantities that can be purchased individually -- for example, do not request 1/2 cup of milk; if you need personal milk, and communal milk will not do, you must request a size of milk that is actually sold, such as 1 quart. If you request a smaller quantity than is available in an individual package, your request will be rounded up to the next size of package.
+        To request an item personally, put your name in the "Cost Object" field. To request an item for co-op, say so in the cost object field, and fill out the co-op date field. To request an item for communal uses, say so in the cost object field.
+        Be specific; I will get you any item that matches your description. For example: if you specify "milk", you might get skim milk, 1% milk, 2% milk, goat's milk, almond milk, et cetera. You might want to specify "3 cups of 1% cow’s milk" instead, if you have specific needs.
+        If an item is not available as requested, it may not be purchased; please specify what would be an appropriate substitute.
+        Please submit co-op supply requests even if we already have the relevant supplies, so that the items can be set aside if we have them, or purchased if not. This DOES NOT apply to personal supplies. Communal supplies that we already have will be purchased at the QM's discretion.
+        If you can, please take the time to find the item you want in the "Formal Item" list. If you can't find it, or if the formal item name doesn't accurately represent what you want, use the "Informal Description" box instead, and I'll assign a formal item name later.
+        Quantities are most useful when specified in ounces, except for fluids, which are best specified in cups or fluid ounces.
+        Once you're satisfied with your requests, please change them to the "SUBMITTED" state. If you decide that you don't actually want an item, please change it to the "RETRACTED" state. You can amend your requests at any point until they've been updated to the "ACCEPTED" state or anything beyond.
+    """
+    creation = [
+        ("dropdown", "formal_name", sorted(items.items(), key=lambda x: x[1])),
+        ("text", "informal_name", ""),
+        ("text", "quantity", "0 oz"),
+        ("text", "substitutions", "No substitutions accepted."),
+        ("dropdown", "cost_object", sorted([(costid, description) for cost in costs.items() if costid in allowable_cost_ids], key=lambda x: x[1])),
+        ("date", "coop_date", ""),
+        ("text", "comments", ""),
+        ("", "", "now"),
+        ("", "", "DRAFT"),
+        ("", "", "now"),
+    ]
+    return simple_table("Request Entry List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, creation=creation)
 
 def process_index():
     user = kerbparse.get_kerberos()
