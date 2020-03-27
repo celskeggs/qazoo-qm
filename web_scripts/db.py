@@ -36,6 +36,7 @@ class ShoppingTrip(SQLBase):
     __tablename__ = "shopping_trip"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     date = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
+    primary = sqlalchemy.Column(sqlalchemy.Boolean(), nullable=False)
 
 class RequestState:
     draft = "draft"

@@ -59,6 +59,10 @@ def item_names_by_uids():
 def locations_by_uids():
     return {loc.uid: loc.name for loc in db.query(db.Location).all()}
 
+def primary_shopping_trip_id():
+    co = db.query(db.ShoppingTrip).filter_by(primary=True).one_or_none()
+    return None if co is None else co.uid
+
 def cost_objects_by_uids():
     return {co.uid: co.description for co in db.query(db.CostObject).all()}
 
@@ -109,9 +113,9 @@ def requests(user, write_access, params):
 
 @mode
 def request_entry(user, write_access, params):
-    if "trip" not in params or not params["trip"].isdigit():
-        return {"template": "error.html", "message": "unrecognized trip ID"}
-    tripid = int(params["trip"])
+    tripid = primary_shopping_trip_id()
+    if tripid is None:
+        return {"template": "error.html", "message": "no shopping trip was marked as primary"}
     mycostid = cost_object_for_user(user)
     if mycostid is None:
         return {"template": "error.html", "message": "could not find cost object for user %s" % user}
