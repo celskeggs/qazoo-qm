@@ -9,11 +9,38 @@
     td { padding: 5px; }
     .header td { border: 2px solid black; }
     </style>
+    {% if optionsets %}
+    <script>
+    document.body.addEventListener("load", function() {
+        var optionsets = {{ optionsets|safe }};
+        var selects = document.getElementsByTagName("select");
+        for (var i = 0; i < selects.length; i++) {
+            var select = selects[i];
+            if (select.attributes.optionset !== undefined) {
+                var optionset = optionsets[select.attributes.optionset.value];
+                var active = (select.attributes.optionactive !== undefined ? select.attributes.optionactive.value : null);
+                if (optionset !== undefined) {
+                    for (var j = 0; j < optionset.length; j++) {
+                        var option = document.createElement("option");
+                        option.value = optionset[j][0];
+                        option.textContent = optionset[j][1];
+                        option.selected = (option.value === active);
+                    }
+                }
+            }
+        }
+    });
+    </script>
+    {% endif %}
 </head>
 <body>
     <h2>{{ title }}</h2>
 
     <p><a href="?mode=overview">Back to overview</a></p>
+
+    {% if optionsets %}
+    <noscript><b>Warning: you have scripts disabled, which means that some elements of this page may malfunction.</b></noscript>
+    {% endif %}
 
     {{ instructions|safe }}
 
@@ -40,6 +67,8 @@
                 <option value="{{ optionname }}"{% if optionname == cell %} selected{% endif %}>{{ optionvalue }}</option>
                 {% endfor %}
             </select>
+            {% elif ctype == "dropdown-optionset" %}
+            <select name="{{ cname }}" optionset="{{ options }}" optionactive="{{ cell }}"></select>
             {% elif ctype == "text" %}
             <input type="text" value="{{ cell }}" name="{{ cname }}">
             {% elif ctype == "date" %}
@@ -63,6 +92,8 @@
                 <option value="{{ optionname }}">{{ optionvalue }}</option>
                 {% endfor %}
             </select>
+            {% elif ctype == "dropdown-optionset" %}
+            <select name="{{ cname }}" optionset="{{ column }}"></select>
             {% elif ctype == "text" %}
             <input type="text" value="{{ column }}" name="{{ cname }}">
             {% elif ctype == "date" %}

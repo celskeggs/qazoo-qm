@@ -6,6 +6,7 @@ import datetime
 import db
 import os
 import jinja2
+import json
 import kerbparse
 import moira
 import urlparse
@@ -35,14 +36,14 @@ def simple_table(title, columns, rows, urls=None, urli=0):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": "", "creation": None, "action": None}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": "", "creation": None, "action": None, "optionsets": None}
 
-def editable_table(title, columns, rows, instructions=None, creation=None, action=None):
+def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None):
     if instructions is None:
         instructions = ""
     else:
         instructions = render(instructions)
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": creation, "action": action}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None}
 
 @mode
 def cost(user, write_access, params):
@@ -170,36 +171,41 @@ def request_entry(user, write_access, params):
     objects = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).order_by(db.Request.submitted_at).all()
     formal_options = [("", "")] + sorted(items.items(), key=lambda x: x[1])
     cost_objects = sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])
+
+    optionsets = {
+        "formal_options": formal_options,
+    }
+
     # TODO: restrict these options based on allowable state transitions
     state_options = [(state, state) for state in db.RequestState.VALUES]
     rows = [
         [
-            ("dropdown", "formal_name.%d" % i.uid, formal_options, i.itemid or ""                     ),
-            ("text",   "informal_name.%d" % i.uid, "",             i.description or ""                ),
-            ("text",        "quantity.%d" % i.uid, "",             render_quantity(i.quantity, i.unit)),
-            ("text",   "substitutions.%d" % i.uid, "",             i.substitution                     ),
-            ("dropdown", "cost_object.%d" % i.uid, cost_objects,   i.costid                           ),
-            ("date",       "coop_date.%d" % i.uid, "",             str(i.coop_date)                   ),
-            ("text",        "comments.%d" % i.uid, "",             i.comments                         ),
-            ("dropdown",       "state.%d" % i.uid, state_options,  i.state                            ),
+            ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options", i.itemid or ""                     ),
+            ("text",             "informal_name.%d" % i.uid, "",               i.description or ""                ),
+            ("text",                  "quantity.%d" % i.uid, "",               render_quantity(i.quantity, i.unit)),
+            ("text",             "substitutions.%d" % i.uid, "",               i.substitution                     ),
+            ("dropdown",           "cost_object.%d" % i.uid, cost_objects,     i.costid                           ),
+            ("date",                 "coop_date.%d" % i.uid, "",               str(i.coop_date)                   ),
+            ("text",                  "comments.%d" % i.uid, "",               i.comments                         ),
+            ("dropdown",                 "state.%d" % i.uid, state_options,    i.state                            ),
         ] for i in objects
     ]
     creation = [
-        ("dropdown", "formal_name.new", formal_options              ),
-        ("text",   "informal_name.new", ""                          ),
-        ("text",        "quantity.new", "0 oz"                      ),
-        ("text",   "substitutions.new", "No substitutions accepted."),
-        ("dropdown", "cost_object.new", cost_objects                ),
-        ("date",       "coop_date.new", ""                          ),
-        ("text",        "comments.new", ""                          ),
-        ("",                        "", "draft"                     ),
+        ("dropdown-optionset", "formal_name.new", "formal_options"            ),
+        ("text",             "informal_name.new", ""                          ),
+        ("text",                  "quantity.new", "0 oz"                      ),
+        ("text",             "substitutions.new", "No substitutions accepted."),
+        ("dropdown",           "cost_object.new", cost_objects                ),
+        ("date",                 "coop_date.new", ""                          ),
+        ("text",                  "comments.new", ""                          ),
+        ("",                                  "", "draft"                     ),
     ]
     instructions = {
         "template": "request.html",
         "date": trip_date,
         "user": user,
     }
-    return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid)
+    return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
 
 def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids):
     costid = int_or_none(params, "cost_object" + suffix)
