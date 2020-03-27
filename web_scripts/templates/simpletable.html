@@ -4,6 +4,7 @@
     <title>QQMI {{ title }}</title>
     <meta charset="UTF-8">
     <style>
+    table { width: 100%; }
     td { padding: 5px; }
     .header td { border: 2px solid black; }
     </style>
@@ -45,9 +46,9 @@
                 {% endfor %}
             </select>
             {% elif ctype == "text" %}
-            <input type="text" value="{{ column }}" name="{{ cname }}">
+            <div><input type="text" value="{{ column }}" name="{{ cname }}"></div>
             {% elif ctype == "date" %}
-            <input type="date" value="{{ column }}" name="{{ cname }}">
+            <div><input type="date" value="{{ column }}" name="{{ cname }}"></div>
             {% else %}
             {{ column }}
             {% endif %}
