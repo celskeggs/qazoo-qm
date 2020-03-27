@@ -145,7 +145,7 @@ def request_entry(user, write_access, params):
         "date": trip_date,
         "user": user,
     }
-    return simple_table("Request Entry List for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=debug")
+    return simple_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=debug")
 
 @mode
 def request_submit(user, write_access, params):
