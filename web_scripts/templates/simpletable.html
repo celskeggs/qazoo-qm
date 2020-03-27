@@ -13,13 +13,7 @@
 
     <p><a href="?mode=overview">Back to overview</a></p>
 
-    {% if instructions %}
-    <ul>
-    {% for line in instructions.strip().split('\n') %}
-    <li>{{ line.strip() }}</li>
-    {% endfor %}
-    </ul>
-    {% endif %}
+    {{ instructions }}
 
     <table border="1">
     <tr class="header">
