@@ -246,9 +246,13 @@ def merge_changes(target, source):
             changes.append((field, repr(getattr(target, field)), repr(getattr(source, field))))
             setattr(target, field, getattr(source, field))
 
+    if str(target.coop_date) != str(source.coop_date):
+        changes.append(("coop_date", target.coop_date, source.coop_date))
+        target.coop_date = source.coop_date
+
     # since smallest step value of our Decimal is 0.01
     if abs(float(target.quantity) - float(source.quantity)) >= 0.005:
-        changes.append((field, target.quantity, source.quantity))
+        changes.append(("quantity", target.quantity, source.quantity))
         target.quantity = source.quantity
 
     # TODO: validate state changes
