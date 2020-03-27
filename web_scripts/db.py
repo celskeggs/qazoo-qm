@@ -9,7 +9,7 @@ class ItemType(SQLBase):
     __tablename__ = "item_type"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.String(127), nullable=False)
-    standard_unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
+    standard_unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
 
 class Location(SQLBase):
     __tablename__ = "location"
@@ -21,7 +21,7 @@ class Inventory(SQLBase):
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
-    unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
+    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
     locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     measurement = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
 
@@ -57,7 +57,7 @@ class Request(SQLBase):
     costid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     description = sqlalchemy.Column(sqlalchemy.String(127), nullable=True)
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=True)
-    unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=True)
+    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=True)
     substitution = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     contact = sqlalchemy.Column(sqlalchemy.String(127), nullable=False)
     coop_date = sqlalchemy.Column(sqlalchemy.Date(), nullable=True)
@@ -90,7 +90,7 @@ class Request(SQLBase):
 #    tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
 #    itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
 #    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
-#    unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
+#    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
 #    substitutions = sqlalchemy.Column(sqlalchemy.Text(), nullable=False)
 #    notes = sqlalchemy.Column(sqlalchemy.Text(), nullable=False)
 
@@ -100,7 +100,7 @@ class Request(SQLBase):
 #    tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
 #    intentionid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
 #    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
-#    unit = sqlalchemy.Column(sqlalchemy.String(15), nullable=False)
+#    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
 #    cost_total_dollars = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
 
 with open(os.path.join(os.getenv("HOME"), ".my.cnf")) as f:
