@@ -239,21 +239,21 @@ def create_request_from_params(params, suffix, tripid, contact, allowable_cost_i
     )
 
 def merge_changes(target, source):
-    changes = []
+    changes = False
 
     for field in ["itemid", "costid", "description", "unit", "substitution", "comments", "state"]:
         if getattr(target, field) != getattr(source, field):
-            changes.append((field, repr(getattr(target, field)), repr(getattr(source, field))))
             setattr(target, field, getattr(source, field))
+            changes = True
 
     if str(target.coop_date) != str(source.coop_date):
-        changes.append(("coop_date", target.coop_date, source.coop_date))
         target.coop_date = source.coop_date
+        changes = True
 
     # since smallest step value of our Decimal is 0.01
     if abs(float(target.quantity) - float(source.quantity)) >= 0.005:
-        changes.append(("quantity", target.quantity, source.quantity))
         target.quantity = source.quantity
+        changes = True
 
     # TODO: validate state changes
 
@@ -289,10 +289,8 @@ def request_submit(user, write_access, params):
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
             return {"template": "error.html", "message": updated_request}
-        changes = merge_changes(request, updated_request)
-        if changes:
+        if merge_changes(request, updated_request):
             any_edits = True
-            return {"template": "error.html", "message": "unintended changes: " + repr(changes)}
 
     new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
     if type(new_request) == str:
