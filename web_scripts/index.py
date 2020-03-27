@@ -102,6 +102,11 @@ def parse_quantity(quantity):
         return None
     return quantity, unit.lower()
 
+def get_by_id(items, uid):
+    if uid is None:
+        return None
+    return items.get(uid, "#REF?")
+
 @mode
 def inventory(user, write_access, params):
     items = item_names_by_uids()
@@ -128,7 +133,7 @@ def requests(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
+    rows = build_table(objects, lambda i: get_by_id(items, i.itemid), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
     return simple_table("Request Review List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows)
 
 @mode
@@ -144,7 +149,7 @@ def request_entry(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     objects = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "state")
+    rows = build_table(objects, lambda i: get_by_id(items, i.itemid), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "state")
     creation = [
         ("dropdown", "formal_name", [("", "")] + sorted(items.items(), key=lambda x: x[1])),
         ("text", "informal_name", ""),
