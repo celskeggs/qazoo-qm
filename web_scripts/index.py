@@ -86,11 +86,12 @@ def allowable_cost_object_uids(user):
 def render_quantity(quantity, unit):
     quantity = str(quantity)
     fq = float(quantity)
-    if not fq:
-        return "none"
     if quantity.endswith(".00"):
         fq = int(fq)
-    return "%s %s" % (fq, unit)
+    textual = "%s %s" % (fq, unit)
+    if parse_quantity(textual) != (quantity, unit):
+        raise ValueError("mismatch between render_quantity and parse_quantity")
+    return textual
 
 def parse_quantity(quantity):
     if type(quantity) != str:
@@ -171,32 +172,84 @@ def request_entry(user, write_access, params):
     cost_objects = sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])
     # TODO: restrict these options based on allowable state transitions
     state_options = [(state, state) for state in db.RequestState.VALUES]
-    rows = build_table(objects,
-        lambda i: ("dropdown", "formal_name", formal_options, i.itemid or ""),
-        lambda i: ("text", "informal_name", "", i.description),
-        lambda i: ("text", "quantity", "", render_quantity(i.quantity, i.unit)),
-        lambda i: ("text", "substitutions", "", i.substitution),
-        lambda i: ("dropdown", "cost_object", cost_objects, i.costid),
-        lambda i: ("date", "coop_date", "", str(i.coop_date)),
-        lambda i: ("text", "comments", "", i.comments),
-        lambda i: ("dropdown", "state", state_options, i.state),
-    )
+    rows = [
+        [
+            ("dropdown", "formal_name.%d" % i.uid, formal_options, i.itemid or ""                     ),
+            ("text",   "informal_name.%d" % i.uid, "",             i.description                      ),
+            ("text",        "quantity.%d" % i.uid, "",             render_quantity(i.quantity, i.unit)),
+            ("text",   "substitutions.%d" % i.uid, "",             i.substitution                     ),
+            ("dropdown", "cost_object.%d" % i.uid, cost_objects,   i.costid                           ),
+            ("date",       "coop_date.%d" % i.uid, "",             str(i.coop_date)                   ),
+            ("text",        "comments.%d" % i.uid, "",             i.comments                         ),
+            ("dropdown",       "state.%d" % i.uid, state_options,  i.state                            ),
+        ] for i in objects
+    ]
     creation = [
-        ("dropdown", "formal_name", formal_options),
-        ("text", "informal_name", ""),
-        ("text", "quantity", "0 oz"),
-        ("text", "substitutions", "No substitutions accepted."),
-        ("dropdown", "cost_object", cost_objects),
-        ("date", "coop_date", ""),
-        ("text", "comments", ""),
-        ("", "", "draft"),
+        ("dropdown", "formal_name.new", formal_options              ),
+        ("text",   "informal_name.new", ""                          ),
+        ("text",        "quantity.new", "0 oz"                      ),
+        ("text",   "substitutions.new", "No substitutions accepted."),
+        ("dropdown", "cost_object.new", cost_objects                ),
+        ("date",       "coop_date.new", ""                          ),
+        ("text",        "comments.new", ""                          ),
+        ("",                        "", "draft"                     ),
     ]
     instructions = {
         "template": "request.html",
         "date": trip_date,
         "user": user,
     }
-    return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=debug&trip=%d" % trip.uid)
+    return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid)
+
+def create_request_from_params(params, suffix, tripid, allowable_cost_ids):
+    costid = int_or_none(params, "cost_object" + suffix)
+    if not costid:
+        return "no cost ID specified"
+
+    if costid not in allowable_cost_ids:
+        return "attempt to submit under invalid cost ID"
+
+    formal_name = int_or_none(params, "formal_name" + suffix)
+    informal_name = param_as_str(params, "informal_name" + suffix, None)
+    if type(informal_name) == list:
+        informal_name = None
+    if formal_name == None and informal_name == None:
+        return None
+
+    quantity, unit = parse_quantity(param_as_str(params, "quantity" + suffix, ""))
+    if quantity is None:
+        return "quantity not provided in required <NUMBER> <UNIT> format"
+
+    now = datetime.datetime.now()
+
+    return db.Request(
+        tripid = tripid,
+        itemid = formal_name,
+        costid = costid,
+        description = informal_name,
+        quantity = quantity,
+        unit = unit,
+        substitution = param_as_str(params, "substitutions" + suffix, "[no entry]"),
+        contact = user,
+        coop_date = param_as_str(params, "coop_date" + suffix, None),
+        comments = param_as_str(params, "comments" + suffix, ""),
+        submitted_at = now,
+        updated_at = now,
+        state = db.RequestState.draft,
+    )
+
+def merge_changes(target, source):
+    any_changes = False
+
+    for field in ["itemid", "costid", "description", "quantity", "unit", "substitution", "coop_date", "comments", "state"]:
+        if getattr(target, field) != getattr(source, field):
+            setattr(target, field, getattr(source, field))
+            any_changes = True
+
+    # TODO: validate state changes
+
+    if any_changes:
+        target.updated_at = source.updated_at
 
 @mode
 def request_submit(user, write_access, params):
@@ -204,46 +257,37 @@ def request_submit(user, write_access, params):
     if trip is None or params.get("trip","") != str(trip.uid):
         return {"template": "error.html", "message": "primary shopping trip changed between page load and form submit"}
 
-    costid = int_or_none(params, "cost_object")
-    if not costid:
-        return {"template": "error.html", "message": "no cost ID specified"}
-
     allowable_cost_ids = allowable_cost_object_uids(user)
     if allowable_cost_ids is None:
         return {"template": "error.html", "message": "could not find cost object for user %s" % user}
 
-    if costid not in allowable_cost_ids:
-        return {"template": "error.html", "message": "attempt to submit under invalid cost ID"}
+    uids = {int(param[6:]) for param in params if param.startswith("state.") and param[6:].isdigit()}
+    requests = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).all()
+    available = set(request.uid for request in requests)
+    for uid in uids:
+        if uid not in available:
+            return {"template": "error.html", "message": "request %d did not exist in an updateable form" % uid}
 
-    formal_name = int_or_none(params, "formal_name")
-    informal_name = param_as_str(params, "informal_name", None)
-    if type(informal_name) == list:
-        informal_name = None
-    if formal_name == None and informal_name == None:
-        return {"template": "error.html", "message": "neither formal nor informal item name provided"}
+    any_edits = False
+    for request in requests:
+        if request.uid not in uids:
+            continue
 
-    quantity, unit = parse_quantity(param_as_str(params, "quantity", ""))
-    if quantity is None:
-        return {"template": "error.html", "message": "quantity not provided in required <NUMBER> <UNIT> format"}
+        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid. allowable_cost_ids=allowable_cost_ids)
+        if updated_request is None:
+            return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
+        if type(updated_request) == str:
+            return {"template": "error.html", "message": updated_request}
+        merge_changes(request, updated_request)
 
-    now = datetime.datetime.now()
-
-    new_request = db.Request(
-        tripid = trip.uid,
-        itemid = formal_name,
-        costid = costid,
-        description = informal_name,
-        quantity = quantity,
-        unit = unit,
-        substitution = param_as_str(params, "substitutions", "[no entry]"),
-        contact = user,
-        coop_date = param_as_str(params, "coop_date", None),
-        comments = param_as_str(params, "comments", ""),
-        submitted_at = now,
-        updated_at = now,
-        state = db.RequestState.draft,
-    )
-    db.add(new_request)
+    new_request = create_request_from_params(params, ".new", tripid=trip.uid, allowable_cost_ids=allowable_cost_ids)
+    if type(new_request) == str:
+        return {"template": "error.html", "message": new_request}
+    if new_request is not None:
+        db.add(new_request)
+    elif any_edits:
+        # needed to make sure any edits from before actually get applied; db.add does this automatically
+        db.commit()
 
     return request_entry(user, write_access, {})
 

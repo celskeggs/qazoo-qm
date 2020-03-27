@@ -118,3 +118,6 @@ def add(x):
     session.add(x)
     session.commit()
 
+def commit():
+    session.commit()
+
