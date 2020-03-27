@@ -273,7 +273,7 @@ def request_submit(user, write_access, params):
         if request.uid not in uids:
             continue
 
-        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid. allowable_cost_ids=allowable_cost_ids)
+        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, allowable_cost_ids=allowable_cost_ids)
         if updated_request is None:
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
