@@ -175,7 +175,7 @@ def request_entry(user, write_access, params):
     rows = [
         [
             ("dropdown", "formal_name.%d" % i.uid, formal_options, i.itemid or ""                     ),
-            ("text",   "informal_name.%d" % i.uid, "",             i.description                      ),
+            ("text",   "informal_name.%d" % i.uid, "",             i.description or ""                ),
             ("text",        "quantity.%d" % i.uid, "",             render_quantity(i.quantity, i.unit)),
             ("text",   "substitutions.%d" % i.uid, "",             i.substitution                     ),
             ("dropdown", "cost_object.%d" % i.uid, cost_objects,   i.costid                           ),
