@@ -138,9 +138,7 @@ def request_entry(user, write_access, params):
         ("dropdown", "cost_object", sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])),
         ("date", "coop_date", ""),
         ("text", "comments", ""),
-        ("", "", "now"),
         ("", "", "draft"),
-        ("", "", "now"),
     ]
     return simple_table("Request Entry List for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions="request.html", creation=creation)
 
