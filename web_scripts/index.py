@@ -84,13 +84,13 @@ def allowable_cost_object_uids(user):
     return uids + user_uids
 
 def render_quantity(quantity, unit):
-    quantity = str(quantity)
     fq = float(quantity)
-    if quantity.endswith(".00"):
+    if str(quantity).endswith(".00"):
         fq = int(fq)
     textual = "%s %s" % (fq, unit)
-    if parse_quantity(textual) != (quantity, unit):
-        raise ValueError("mismatch between render_quantity and parse_quantity")
+    parsed = parse_quantity(textual)
+    if parsed != (fq, unit):
+        raise ValueError("mismatch between render_quantity and parse_quantity: %s instead of %s" % (parsed, (quantity, unit)))
     return textual
 
 def parse_quantity(quantity):
