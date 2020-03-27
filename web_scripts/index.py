@@ -160,7 +160,7 @@ def request_entry(user, write_access, params):
         lambda i: ("dropdown", "formal_name", formal_options, i.itemid or ""),
         lambda i: ("text", "informal_name", "", i.description),
         lambda i: ("text", "quantity", "", render_quantity(i.quantity, i.unit)),
-        lambda i: ("text", "substitutions", "", i.substitutions),
+        lambda i: ("text", "substitutions", "", i.substitution),
         lambda i: ("dropdown", "cost_object", cost_objects, i.costid),
         lambda i: ("date", "coop_date", "", str(i.coop_date)),
         lambda i: ("text", "comments", "", i.comments),
