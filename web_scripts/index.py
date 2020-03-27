@@ -239,19 +239,19 @@ def create_request_from_params(params, suffix, tripid, contact, allowable_cost_i
     )
 
 def merge_changes(target, source):
-    any_changes = False
+    changes = []
 
     for field in ["itemid", "costid", "description", "quantity", "unit", "substitution", "coop_date", "comments", "state"]:
         if getattr(target, field) != getattr(source, field):
             setattr(target, field, getattr(source, field))
-            any_changes = True
+            changes.append(field)
 
     # TODO: validate state changes
 
-    if any_changes:
+    if changes:
         target.updated_at = source.updated_at
 
-    return any_changes
+    return changes
 
 @mode
 def request_submit(user, write_access, params):
@@ -280,8 +280,10 @@ def request_submit(user, write_access, params):
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
             return {"template": "error.html", "message": updated_request}
-        if merge_changes(request, updated_request):
+        changes = merge_changes(request, updated_request)
+        if changes:
             any_edits = True
+            return {"template": "error.html", "message": "unintended changes: " + repr(changes)}
 
     new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
     if type(new_request) == str:
