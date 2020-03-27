@@ -98,7 +98,7 @@ def trips(user, write_access, params):
 @mode
 def requests(user, write_access, params):
     if "trip" not in params or not params["trip"].isdigit():
-        return {"template": "notfound.html"}
+        return {"template": "error.html", "message": "unrecognized trip ID"}
     tripid = int(params["trip"])
 
     items = item_names_by_uids()
@@ -110,11 +110,11 @@ def requests(user, write_access, params):
 @mode
 def request_entry(user, write_access, params):
     if "trip" not in params or not params["trip"].isdigit():
-        return {"template": "notfound.html"}
+        return {"template": "error.html", "message": "unrecognized trip ID"}
     tripid = int(params["trip"])
     mycostid = cost_object_for_user(user)
     if mycostid is None:
-        return {"template": "notfound.html"}
+        return {"template": "error.html", "message": "could not find cost object for user %s" % user}
     allowable_cost_ids = cost_objects_for_no_user() + [mycostid]
 
     items = item_names_by_uids()
