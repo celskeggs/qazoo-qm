@@ -241,10 +241,15 @@ def create_request_from_params(params, suffix, tripid, contact, allowable_cost_i
 def merge_changes(target, source):
     changes = []
 
-    for field in ["itemid", "costid", "description", "quantity", "unit", "substitution", "coop_date", "comments", "state"]:
+    for field in ["itemid", "costid", "description", "unit", "substitution", "coop_date", "comments", "state"]:
         if getattr(target, field) != getattr(source, field):
             changes.append((field, repr(getattr(target, field)), repr(getattr(source, field))))
             setattr(target, field, getattr(source, field))
+
+    # since smallest step value of our Decimal is 0.01
+    if abs(float(target.quantity) - float(source.quantity)) >= 0.005:
+        changes.append((field, target.quantity, source.quantity))
+        target.quantity = source.quantity
 
     # TODO: validate state changes
 
@@ -283,7 +288,6 @@ def request_submit(user, write_access, params):
         changes = merge_changes(request, updated_request)
         if changes:
             any_edits = True
-            return {"template": "error.html", "message": "unintended changes: " + repr(changes)}
 
     new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
     if type(new_request) == str:
