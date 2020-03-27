@@ -60,8 +60,8 @@ def locations_by_uids():
     return {loc.uid: loc.name for loc in db.query(db.Location).all()}
 
 def primary_shopping_trip_id():
-    co = db.query(db.ShoppingTrip).filter_by(primary=True).one_or_none()
-    return None if co is None else co.uid
+    st = db.query(db.ShoppingTrip).filter_by(primary=True).all()
+    return None if len(st) != 1 else st[0].uid
 
 def cost_objects_by_uids():
     return {co.uid: co.description for co in db.query(db.CostObject).all()}
@@ -70,8 +70,8 @@ def cost_objects_for_no_user():
     return [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
 
 def cost_object_for_user(user):
-    co = db.query(db.CostObject).filter_by(kerberos=user).one_or_none()
-    return None if co is None else co.uid
+    co = db.query(db.CostObject).filter_by(kerberos=user).all()
+    return None if len(co) != 1 else co[0].uid
 
 def render_quantity(quantity, unit):
     quantity = str(quantity)
