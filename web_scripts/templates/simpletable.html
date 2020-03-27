@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <style>
     table { width: 100%; }
-    input { width: 100%; box-sizing: border-box; }
+    td input { width: 100%; box-sizing: border-box; }
     td { padding: 5px; }
     .header td { border: 2px solid black; }
     </style>
@@ -18,7 +18,7 @@
     {{ instructions|safe }}
 
     {% if action %}
-    <form action="{{ action }}">
+    <form action="{{ action }}" method="POST">
     {% endif %}
     <table border="1">
     <tr class="header">
