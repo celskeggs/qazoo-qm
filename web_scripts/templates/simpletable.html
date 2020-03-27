@@ -50,9 +50,9 @@
                 <option value="{{ optionname }}">{{ optionvalue }}</option>
                 {% endfor %}
             </select>
-            {% elif ctype == "text"}
+            {% elif ctype == "text" %}
             <input type="text" value="{{ column }}" name="{{ cname }}">
-            {% elif ctype == "date"}
+            {% elif ctype == "date" %}
             <input type="date" value="{{ column }}" name="{{ cname }}">
             {% else %}
             {{ column }}
