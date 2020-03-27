@@ -35,7 +35,7 @@ def simple_table(title, columns, rows, urls=None, urli=0):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": None, "creation": None, "action": None}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": "", "creation": None, "action": None}
 
 def editable_table(title, columns, rows, instructions=None, creation=None, action=None):
     if instructions is None:
