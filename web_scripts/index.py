@@ -194,7 +194,7 @@ def request_submit(user, write_access, params):
     if quantity is None:
         return {"template": "error.html", "message": "quantity not provided in required <NUMBER> <UNIT> format"}
 
-    now = datetime.now()
+    now = datetime.datetime.now()
 
     new_request = db.Request(
         tripid = trip.uid,
