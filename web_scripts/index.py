@@ -300,7 +300,7 @@ def request_submit(user, write_access, params):
         if request.uid not in uids:
             continue
 
-        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
+        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allow_set_state=True)
         if updated_request is None:
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
@@ -308,7 +308,7 @@ def request_submit(user, write_access, params):
         if merge_changes(request, updated_request):
             any_edits = True
 
-    new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
+    new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allow_set_state=False)
     if type(new_request) == str:
         return {"template": "error.html", "message": new_request}
     if new_request is not None:
