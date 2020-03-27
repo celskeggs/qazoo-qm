@@ -93,6 +93,8 @@ def render_quantity(quantity, unit):
     return "%s %s" % (fq, unit)
 
 def parse_quantity(quantity):
+    if type(quantity) != str:
+        return None
     parts = quantity.strip().split(" ", 1)
     if len(parts) == 1:
         parts += ["units"]
@@ -109,6 +111,19 @@ def get_by_id(items, uid):
     if uid is None:
         return None
     return items.get(uid, "#REF?")
+
+def param_as_str(params, name, default=None):
+    l = params.get(name, [])
+    if type(l) == list or not l:
+        return default
+    return l
+
+def int_or_none(params, name):
+    text = param_as_str(params, name, "")
+    if text.isdigit():
+        return int(text)
+    else:
+        return None
 
 @mode
 def inventory(user, write_access, params):
@@ -129,13 +144,13 @@ def trips(user, write_access, params):
 
 @mode
 def requests(user, write_access, params):
-    if "trip" not in params or not params["trip"].isdigit():
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
         return {"template": "error.html", "message": "unrecognized trip ID"}
-    tripid = int(params["trip"])
 
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
-    objects = db.query(db.Request).filter_by(tripid=int(params["trip"])).order_by(db.Request.submitted_at).all()
+    objects = db.query(db.Request).filter_by(tripid=tripid).order_by(db.Request.submitted_at).all()
     rows = build_table(objects, lambda i: get_by_id(items, i.itemid), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
     return simple_table("Request Review List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows)
 
@@ -183,13 +198,6 @@ def request_entry(user, write_access, params):
     }
     return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=debug&trip=%d" % trip.uid)
 
-def int_or_none(params, name):
-    text = params.get(name, "")
-    if text.isdigit():
-        return int(text)
-    else:
-        return None
-
 @mode
 def request_submit(user, write_access, params):
     trip = primary_shopping_trip()
@@ -208,11 +216,13 @@ def request_submit(user, write_access, params):
         return {"template": "error.html", "message": "attempt to submit under invalid cost ID"}
 
     formal_name = int_or_none(params, "formal_name")
-    informal_name = params.get("informal_name") or None
+    informal_name = param_as_str(params, "informal_name", None)
+    if type(informal_name) == list:
+        informal_name = None
     if formal_name == None and informal_name == None:
         return {"template": "error.html", "message": "neither formal nor informal item name provided"}
 
-    quantity, unit = parse_quantity(params.get("quantity", ""))
+    quantity, unit = parse_quantity(param_as_str(params, "quantity", ""))
     if quantity is None:
         return {"template": "error.html", "message": "quantity not provided in required <NUMBER> <UNIT> format"}
 
@@ -225,10 +235,10 @@ def request_submit(user, write_access, params):
         description = informal_name,
         quantity = quantity,
         unit = unit,
-        substitution = params.get("substitutions", "[no entry]"),
+        substitution = param_as_str(params, "substitutions", "[no entry]"),
         contact = user,
-        coop_date = params.get("coop_date") or None,
-        comments = params.get("comments", ""),
+        coop_date = param_as_str(params, "coop_date", None),
+        comments = param_as_str(params, "comments", ""),
         submitted_at = now,
         updated_at = now,
         state = db.RequestState.draft,
@@ -239,7 +249,7 @@ def request_submit(user, write_access, params):
 
 @mode
 def debug(user, write_access, params):
-    return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted(params.items()))
+    return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([k, (sorted(v) if type(v) == list else v) for k,v in params.items()]))
 
 def process_index():
     user = kerbparse.get_kerberos()
@@ -251,9 +261,9 @@ def process_index():
 
     write_access = (user == QM)
     fields = cgi.FieldStorage()
-    params = {field: fields[field].value for field in fields}
+    params = {field: ([f.value for f in fields[field]] if type(fields[field]) == list else fields[field].value) for field in fields}
 
-    mode = params.get("mode", "") or "overview"
+    mode = param_as_str(params, "mode", "overview")
 
     if mode not in modes:
         return {"template": "notfound.html"}
