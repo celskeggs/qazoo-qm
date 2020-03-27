@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import cgitb; cgitb.enable()
 import cgi
+import datetime
 import db
 import os
 import jinja2
@@ -70,12 +71,13 @@ def primary_shopping_trip():
 def cost_objects_by_uids():
     return {co.uid: co.description for co in db.query(db.CostObject).all()}
 
-def cost_objects_for_no_user():
-    return [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
-
-def cost_object_for_user(user):
-    co = db.query(db.CostObject).filter_by(kerberos=user).all()
-    return None if len(co) != 1 else co[0].uid
+def allowable_cost_object_uids(user):
+    # TODO: make this simpler
+    uids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
+    user_uids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=user).all()]
+    if not user_uids:
+        return None
+    return uids + user_uids
 
 def render_quantity(quantity, unit):
     quantity = str(quantity)
@@ -121,10 +123,9 @@ def request_entry(user, write_access, params):
     if trip is None:
         return {"template": "error.html", "message": "no shopping trip was marked as primary"}
     trip_date = str(trip.date)
-    mycostid = cost_object_for_user(user)
-    if mycostid is None:
+    allowable_cost_ids = allowable_cost_object_uids(user)
+    if allowable_cost_ids is None:
         return {"template": "error.html", "message": "could not find cost object for user %s" % user}
-    allowable_cost_ids = cost_objects_for_no_user() + [mycostid]
 
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
@@ -145,11 +146,59 @@ def request_entry(user, write_access, params):
         "date": trip_date,
         "user": user,
     }
-    return simple_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=debug")
+    return simple_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid)
+
+def int_or_none(params, name):
+    text = params.get(name, "")
+    if text.isdigit():
+        return int(text)
+    else:
+        return None
 
 @mode
 def request_submit(user, write_access, params):
-#    db.Request(
+    trip = primary_shopping_trip()
+    if trip is None or params.get("trip","") != str(trip.uid):
+        return {"template": "error.html", "message": "primary shopping trip changed between page load and form submit"}
+
+    costid = int_or_none(params, "cost_object")
+    if not costid:
+        return {"template": "error.html", "message": "no cost ID specified"}
+
+    allowable_cost_ids = allowable_cost_object_uids(user)
+    if allowable_cost_ids is None:
+        return {"template": "error.html", "message": "could not find cost object for user %s" % user}
+
+    if costid not in allowable_cost_ids:
+        return {"template": "error.html", "message": "attempt to submit under invalid cost ID"}
+
+    formal_name = int_or_none(params, "formal_name")
+    informal_name = params.get("informal_name") or None
+    if formal_name == None and informal_name == None:
+        return {"template": "error.html", "message": "neither formal nor informal item name provided"}
+
+    quantity, unit = parse_quantity(params.get("quantity", ""))
+    if quantity is None:
+        return {"template": "error.html", "message": "quantity not provided in required <NUMBER> <UNIT> format"}
+
+    now = datetime.now()
+
+    new_request = db.Request(
+        tripid = trip.uid,
+        itemid = formal_name,
+        costid = costid,
+        description = informal_name,
+        quantity = quantity,
+        unit = unit,
+        substitution = params.get("substitutions", "[no entry]"),
+        contact = user,
+        coop_date = params.get("coop_date") or None,
+        comments = params.get("comments", ""),
+        submitted_at = now,
+        updated_at = now,
+        state = db.RequestState.draft,
+    )
+    db.add(new_request)
 
     return request_entry(user, write_access, {})
 

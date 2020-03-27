@@ -114,47 +114,6 @@ session = sqlalchemy.orm.sessionmaker(bind=sqlengine)()
 def query(x):
     return session.query(x)
 
-#def get_all_racks():
-#    return session.query(Racks).all()
-
-#def get_all_devices():
-#    devices = []
-#    seen = set()
-#    for device in session.query(DeviceUpdates).order_by(DeviceUpdates.txid.desc()).all():
-#        if device.id in seen:
-#            continue
-#        seen.add(device.id)
-#        devices.append(device)
-#    return devices
-
-#def get_all_parts():
-#    return session.query(Parts).all()
-
-#def get_latest_inventory():
-#    # TODO: do this more efficiently
-#    updates = session.query(Inventory).all()
-#    latest = {}
-#    for update in updates:
-#        if update.sku not in latest or latest[update.sku].txid < update.txid:
-#            latest[update.sku] = update
-#    return latest
-
-#def get_inventory(sku):
-#    return session.query(Inventory).filter_by(sku=sku).all()
-
-#def get_part(sku):
-#    return session.query(Parts).filter_by(sku=sku).one()
-
-#def get_rack(name):
-#    return session.query(Racks).filter_by(name=name).one()
-
-# latest version is at the end of the returned list
-#def get_device_history(id):
-#    return session.query(DeviceUpdates).filter_by(id=id).order_by(DeviceUpdates.txid).all()
-
-#def get_device_latest(id):
-#    return session.query(DeviceUpdates).filter_by(id=id).order_by(DeviceUpdates.txid.desc()).limit(1).one()
-
 def add(x):
     session.add(x)
     session.commit()
