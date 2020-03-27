@@ -91,7 +91,7 @@ def render_quantity(quantity, unit):
     textual = "%s %s" % (fq, unit)
     parsed = parse_quantity(textual)
     if parsed != (fq, unit):
-        raise ValueError("mismatch between render_quantity and parse_quantity: %s instead of %s" % (parsed, (quantity, unit)))
+        raise ValueError("mismatch between render_quantity and parse_quantity: %s instead of %s" % (parsed, (fq, unit)))
     return textual
 
 def parse_quantity(quantity):
@@ -107,7 +107,7 @@ def parse_quantity(quantity):
         return None
     if not unit.replace(" ","").isalpha():
         return None
-    return quantity, unit.lower()
+    return quantity, unit
 
 def get_by_id(items, uid):
     if uid is None:
