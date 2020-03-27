@@ -251,6 +251,8 @@ def merge_changes(target, source):
     if any_changes:
         target.updated_at = source.updated_at
 
+    return any_changes
+
 @mode
 def request_submit(user, write_access, params):
     trip = primary_shopping_trip()
@@ -278,7 +280,8 @@ def request_submit(user, write_access, params):
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
             return {"template": "error.html", "message": updated_request}
-        merge_changes(request, updated_request)
+        if merge_changes(request, updated_request):
+            any_edits = True
 
     new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids)
     if type(new_request) == str:
@@ -289,8 +292,7 @@ def request_submit(user, write_access, params):
         # needed to make sure any edits from before actually get applied; db.add does this automatically
         db.commit()
 
-    return {"template": "error.html", "message": "considered: " + repr(requests)}
-    #return request_entry(user, write_access, {})
+    return request_entry(user, write_access, {})
 
 @mode
 def debug(user, write_access, params):
