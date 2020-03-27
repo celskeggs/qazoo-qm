@@ -31,10 +31,13 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0, instructions=None, creation=None, action=None):
+def simple_table(title, columns, rows, urls=None, urli=0):
     if urls is None:
         urls = [None] * len(rows)
-    rows = [[(url, cell) if ci == urli else (None, cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
+    rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "urls": urls, "instructions": instructions, "creation": creation, "action": action}
+
+def editable_table(title, columns, rows, instructions=None, creation=None, action=None):
     if instructions is None:
         instructions = ""
     else:
@@ -149,13 +152,26 @@ def request_entry(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     objects = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: get_by_id(items, i.itemid), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "state")
+    formal_options = [("", "")] + sorted(items.items(), key=lambda x: x[1])
+    cost_objects = sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])
+    # TODO: restrict these options based on allowable state transitions
+    state_options = {state: state for state in db.RequestState.VALUES}
+    rows = build_table(objects,
+        lambda i: ("dropdown", "formal_name", formal_options, i.itemid or ""),
+        lambda i: ("text", "informal_name", "", i.description),
+        lambda i: ("text", "quantity", "", render_quantity(i.quantity, i.unit)),
+        lambda i: ("text", "substitutions", "", i.substitutions),
+        lambda i: ("dropdown", "cost_object", cost_objects, i.costid),
+        lambda i: ("date", "coop_date", "", str(i.coop_date)),
+        lambda i: ("text", "comments", "", i.comments),
+        lambda i: ("dropdown", "state", state_options, i.state),
+    )
     creation = [
-        ("dropdown", "formal_name", [("", "")] + sorted(items.items(), key=lambda x: x[1])),
+        ("dropdown", "formal_name", formal_options),
         ("text", "informal_name", ""),
         ("text", "quantity", "0 oz"),
         ("text", "substitutions", "No substitutions accepted."),
-        ("dropdown", "cost_object", sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])),
+        ("dropdown", "cost_object", cost_objects),
         ("date", "coop_date", ""),
         ("text", "comments", ""),
         ("", "", "draft"),
@@ -165,7 +181,7 @@ def request_entry(user, write_access, params):
         "date": trip_date,
         "user": user,
     }
-    return simple_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid)
+    return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=debug&trip=%d" % trip.uid)
 
 def int_or_none(params, name):
     text = params.get(name, "")

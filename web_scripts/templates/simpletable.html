@@ -28,12 +28,24 @@
     </tr>
     {% for row in rows %}
     <tr>
-        {% for url, cell in row %}
+        {% for ctype, cname, options, cell in row %}
         <td>
-            {% if cell %}
-                {% if url %}
+            {% if ctype == "url" %}
+                {% if cell %}
                 <a href="{{ url }}">{{ cell }}</a>
-                {% else %}
+                {% endif %}
+            {% elif ctype == "dropdown" %}
+            <select name="{{ cname }}">
+                {% for optionname, optionvalue in options %}
+                <option value="{{ optionname }}"{% if optionname == cell %} selected{% endif %}>{{ optionvalue }}</option>
+                {% endfor %}
+            </select>
+            {% elif ctype == "text" %}
+            <input type="text" value="{{ cell }}" name="{{ cname }}">
+            {% elif ctype == "date" %}
+            <input type="date" value="{{ cell }}" name="{{ cname }}">
+            {% else %}
+                {% if cell %}
                 {{ cell }}
                 {% endif %}
             {% endif %}
