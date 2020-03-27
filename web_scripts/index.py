@@ -175,7 +175,7 @@ def request_entry(user, write_access, params):
     optionsets = {
         "formal_options": formal_options,
         "cost_objects": cost_objects,
-        "state_options" state_options,
+        "state_options": state_options,
     }
 
     # TODO: restrict these options based on allowable state transitions
