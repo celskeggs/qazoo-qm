@@ -172,6 +172,9 @@ def request_entry(user, write_access, params):
     formal_options = [("", "")] + sorted(items.items(), key=lambda x: x[1])
     cost_objects = sorted([(costid, description) for (costid, description) in costs.items() if costid in allowable_cost_ids])
 
+    default_costid = objects[-1].costid
+    default_date = objects[-1].coop_date
+
     # TODO: restrict these options based on allowable state transitions
     state_options = [(state, state) for state in db.RequestState.VALUES]
 
@@ -194,14 +197,14 @@ def request_entry(user, write_access, params):
         ] for i in objects
     ]
     creation = [
-        ("dropdown-optionset", "formal_name.new", "formal_options"            ),
-        ("text",             "informal_name.new", ""                          ),
-        ("text",                  "quantity.new", "0 oz"                      ),
-        ("text",             "substitutions.new", "No substitutions accepted."),
-        ("dropdown-optionset", "cost_object.new", "cost_objects"              ),
-        ("date",                 "coop_date.new", ""                          ),
-        ("text",                  "comments.new", ""                          ),
-        ("",                                  "", "draft"                     ),
+        ("dropdown-optionset", "formal_name.new", "formal_options", ""                          ),
+        ("text",             "informal_name.new", "",               ""                          ),
+        ("text",                  "quantity.new", "",               "0 oz"                      ),
+        ("text",             "substitutions.new", "",               "No substitutions accepted."),
+        ("dropdown-optionset", "cost_object.new", "cost_objects",   default_costid              ),
+        ("date",                 "coop_date.new", "",               default_date                ),
+        ("text",                  "comments.new", "",               ""                          ),
+        ("",                                  "", "",               "draft"                     ),
     ]
     instructions = {
         "template": "request.html",

@@ -85,16 +85,16 @@
     {% endfor %}
     {% if creation %}
     <tr>
-        {% for ctype, cname, column in creation %}
+        {% for ctype, cname, options, column in creation %}
         <td>
             {% if ctype == "dropdown" %}
             <select name="{{ cname }}">
-                {% for optionname, optionvalue in column %}
-                <option value="{{ optionname }}">{{ optionvalue }}</option>
+                {% for optionname, optionvalue in options %}
+                <option value="{{ optionname }}"{% if optionname == cell %} selected{% endif %}>{{ optionvalue }}</option>
                 {% endfor %}
             </select>
             {% elif ctype == "dropdown-optionset" %}
-            <select name="{{ cname }}" optionset="{{ column }}"></select>
+            <select name="{{ cname }}" optionset="{{ options }}" optionactive="{{ column }}"></select>
             {% elif ctype == "text" %}
             <input type="text" value="{{ column }}" name="{{ cname }}">
             {% elif ctype == "date" %}
