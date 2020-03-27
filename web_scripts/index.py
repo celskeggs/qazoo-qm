@@ -248,34 +248,5 @@ def print_index():
     print("Content-type: text/html\n")
     print(page)
 
-def perform_update(params):
-    user = kerbparse.get_kerberos()
-    device = db.get_device_latest(params["id"])
-    if not can_edit(user, device):
-        raise Exception("no access")
-    rack = db.get_rack(params["rack"])
-    first, last = int(params["first"]), int(params["last"])
-    assert 1 <= first <= last <= rack.height
-    if not moira.is_email_valid_for_owner(params["owner"]):
-        raise Exception("bad owner")
-    ndevice = db.DeviceUpdates(
-        id = device.id,
-        name = params["devicename"],
-        rack = params["rack"],
-        rack_first_slot = first,
-        rack_last_slot = last,
-        ip = params.get("ip", ""),
-        contact = params["contact"],
-        owner = params["owner"],
-        service_level = params.get("service", ""),
-        model = params.get("model", ""),
-        notes = params.get("notes", ""),
-        last_updated_by = user,
-    )
-    db.add(ndevice)
-    db.session.commit()
-    print("Content-type: text/html\n")
-    print(jenv.get_template("done.html").render(id=device.id).encode("utf-8"))
-
 if __name__ == "__main__":
     print_index()

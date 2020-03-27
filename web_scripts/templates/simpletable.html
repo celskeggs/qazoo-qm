@@ -30,10 +30,12 @@
     <tr>
         {% for url, cell in row %}
         <td>
-            {% if url %}
-            <a href="{{ url }}">{{ cell }}</a>
-            {% else %}
-            {{ cell }}
+            {% if cell %}
+                {% if url %}
+                <a href="{{ url }}">{{ cell }}</a>
+                {% else %}
+                {{ cell }}
+                {% endif %}
             {% endif %}
         </td>
         {% endfor %}
