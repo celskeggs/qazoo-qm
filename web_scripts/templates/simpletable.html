@@ -11,7 +11,7 @@
     </style>
     {% if optionsets %}
     <script>
-    document.addEventListener("load", function() {
+    window.onload = function() {
         console.log("load");
         var optionsets = {{ optionsets|safe }};
         var selects = document.getElementsByTagName("select");
@@ -33,7 +33,7 @@
                 }
             }
         }
-    });
+    };
     </script>
     {% endif %}
 </head>
