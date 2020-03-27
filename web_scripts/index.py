@@ -90,8 +90,8 @@ def render_quantity(quantity, unit):
         fq = int(fq)
     textual = "%s %s" % (fq, unit)
     parsed = parse_quantity(textual)
-    if parsed != (fq, unit):
-        raise ValueError("mismatch between render_quantity and parse_quantity: %s instead of %s" % (parsed, (fq, unit)))
+    if parsed != (fq, unit.strip()):
+        raise ValueError("mismatch between render_quantity and parse_quantity: %s instead of %s" % (parsed, (fq, unit.strip())))
     return textual
 
 def parse_quantity(quantity):
