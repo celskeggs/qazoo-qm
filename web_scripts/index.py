@@ -243,8 +243,8 @@ def merge_changes(target, source):
 
     for field in ["itemid", "costid", "description", "quantity", "unit", "substitution", "coop_date", "comments", "state"]:
         if getattr(target, field) != getattr(source, field):
+            changes.append((field, repr(getattr(target, field)), repr(getattr(source, field)))
             setattr(target, field, getattr(source, field))
-            changes.append(field)
 
     # TODO: validate state changes
 
