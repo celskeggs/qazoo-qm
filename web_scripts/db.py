@@ -76,11 +76,11 @@ class RequestState:
         ],
         retracted: [
             [],
-            [draft, submitted, accepted],
+            [draft, submitted],
         ],
         rejected: [
             [],
-            [draft, submitted, accepted],
+            [draft, submitted],
         ],
     }
 
