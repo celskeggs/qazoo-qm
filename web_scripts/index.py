@@ -207,7 +207,7 @@ def requests(user, write_access, params):
         "template": "reviewlist.html",
         "can_edit": write_access,
         "edit": edit,
-        "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, not edit),
+        "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
     }
     return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action="?mode=request_modify&trip=%d" % trip.uid, optionsets=optionsets)
 
