@@ -450,6 +450,7 @@ def inventory_review_list(user, write_access, params):
 
     locations = locations_by_uids()
     items = item_names_by_uids()
+
     yesterday = datetime.date.fromordinal(datetime.date.today().toordinal() - 1)
     rows = [(
         ("", "", "", "yes" if i.measurement >= yesterday else "no"),
@@ -466,11 +467,32 @@ def inventory_review_list(user, write_access, params):
 
     instructions = "Found %d items for inventory" % count
 
-    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action=("?mode=debug" if write_access else None), instructions=instructions)
+    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action=("?mode=inventory_update" if write_access else None), instructions=instructions)
 
 @mode
 def inventory_update(user, write_access, params):
-    pass
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    updates = {}
+    for p in params:
+        if p.startswith("quantity.") and p.count(".") == 2:
+            _, itemid, locationid = p.split(".")
+            updates[(itemid, locationid)] = parse_quantity(params[p])
+
+    locations = locations_by_uids()
+    items = item_names_by_uids()
+
+    rows = [(items[itemid], locations[locationid], quantity, unit) for (itemid, locationid), (quantity, unit) in updates.items()]
+    rows.sort()
+
+    return simple_table("Debug Review", ["Item Name", "Location", "Quantity", "Unit"], rows)
 
 @mode
 def debug(user, write_access, params):
