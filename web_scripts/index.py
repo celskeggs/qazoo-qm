@@ -172,20 +172,21 @@ def requests(user, write_access, params):
     }
 
     if not edit:
-        rows = build_table(
-            objects,
-            lambda i: get_by_id(items, i.itemid),
-            "description",
-            lambda i: render_quantity(i.quantity, i.unit),
-            "substitution",
-            "contact",
-            lambda i: costs.get(i.costid, "#REF?"),
-            "coop_date",
-            "comments",
-            "submitted_at",
-            "state",
-            "updated_at",
-        )
+        rows = [
+            [
+                ("", "", "", get_by_id(items, i.itemid)),
+                ("", "", "", i.description or ""),
+                ("", "", "", render_quantity(i.quantity, i.unit)),
+                ("", "", "", i.substitution),
+                ("", "", "", i.contact),
+                ("", "", "", costs.get(i.costid, "#REF?")),
+                ("", "", "", i.coop_date),
+                ("", "", "", i.comments),
+                ("", "", "", i.submitted_at),
+                ("", "", "", i.state),
+                ("", "", "", i.updated_at),
+            ] for i in objects
+        ]
     else: # if edit
         rows = [
             [
