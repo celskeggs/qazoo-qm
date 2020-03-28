@@ -402,7 +402,7 @@ def request_modify(user, write_access, params):
     res = handle_request_updates(user, write_access, params, trip)
     if res is not None:
         return res
-    return requests(user, write_access, {"trip": params["trip"]})
+    return requests(user, write_access, {"trip": params["trip"], "edit": "true"})
 
 @mode
 def debug(user, write_access, params):
