@@ -149,6 +149,9 @@ session = sqlalchemy.orm.sessionmaker(bind=sqlengine)()
 def query(x):
     return session.query(x)
 
+def add_no_commit(x):
+    session.add(x)
+
 def add(x):
     session.add(x)
     session.commit()
