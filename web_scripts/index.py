@@ -249,6 +249,7 @@ def request_entry(user, write_access, params):
 
     rows = [
         [
+            ("checkbox",                  "edit.%d" % i.uid, "",               False                              ),
             ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options", i.itemid or ""                     ),
             ("text",             "informal_name.%d" % i.uid, "",               i.description or ""                ),
             ("text",                  "quantity.%d" % i.uid, "",               render_quantity(i.quantity, i.unit)),
@@ -275,7 +276,7 @@ def request_entry(user, write_access, params):
         "date": trip_date,
         "user": user,
     }
-    return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
+    return editable_table("Request Entry Form for " + trip_date, ["Edit?", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
 
 def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allowable_states):
     formal_name = int_or_none(params, "formal_name" + suffix)
@@ -392,7 +393,7 @@ def request_submit(user, write_access, params):
     if trip is None or params.get("trip","") != str(trip.uid):
         return {"template": "error.html", "message": "primary shopping trip changed between page load and form submit"}
 
-    res = handle_request_updates(user, False, params, trip)
+    res = handle_request_updates(user, False, params, trip, require_edit=True)
     if res is not None:
         return res
     return request_entry(user, write_access, {})
