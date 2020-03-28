@@ -175,6 +175,7 @@ def requests(user, write_access, params):
         check = []
         rows = [
             [
+                ("", "", "", i.uid                              ),
                 ("", "", "", get_by_id(items, i.itemid)         ),
                 ("", "", "", i.description or ""                ),
                 ("", "", "", render_quantity(i.quantity, i.unit)),
@@ -194,6 +195,7 @@ def requests(user, write_access, params):
         rows = [
             [
                 ("checkbox",                  "edit.%d" % i.uid, "",                        False                              ),
+                ("",                                         "", "",                        i.uid                              ),
                 ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options",          i.itemid or ""                     ),
                 ("text",             "informal_name.%d" % i.uid, "",                        i.description or ""                ),
                 ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
@@ -213,8 +215,9 @@ def requests(user, write_access, params):
         "can_edit": write_access,
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
+        "inventorylink": "?mode=inventory_review_list&trip=%d" % (trip.uid),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
+    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
@@ -413,6 +416,44 @@ def request_modify(user, write_access, params):
     if res is not None:
         return res
     return requests(user, write_access, {"trip": params["trip"], "edit": "true"})
+
+def build_latest_inventory(filter_query):
+    inventory = db.query(db.Inventory).filter(filter_query).order_by(db.Inventory.measurement).all()
+
+    # only take the latest measurement by location and item type
+    inventory_latest = {}
+    for i in inventory:
+        key = (i.itemid, i.locationid)
+        if key in inventory_latest:
+            assert inventory_latest[key].measurement <= i.measurement
+        inventory_latest[key] = i
+    return list(inventory_latest.values())
+
+@mode
+def inventory_review_list(user, write_access, params):
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    valid_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected]), db.Request.costid.in_(valid_costids)).all()
+    relevant_itemids = {r.itemid for r in requests}
+    inventory = build_latest_inventory(db.Inventory.itemid.in_(relevant_itemids))
+
+    request_ids = {itemid: [] for itemid in relevant_itemids}
+    for request in requests:
+        request_ids[request.itemid].append(request.uid)
+
+    locations = locations_by_uids()
+    items = item_names_by_uids()
+
+    rows = [(locations[i.locationid], items[i.itemid], render_quantity(i.quantity, i.unit), str(i.measurement), ", ".join(map(str,request_ids[i.itemid]))) for i in inventory]
+    rows.sort()
+
+    return simple_table("Inventory Incremental Review", ["Location", "Item", "Inventory Quantity", "Last Inventoried", "Request IDs"], rows)
 
 @mode
 def debug(user, write_access, params):
