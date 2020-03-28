@@ -41,8 +41,8 @@ def simple_table(title, columns, rows, urls=None, urli=0):
 def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None):
     if instructions is None:
         instructions = ""
-    else:
-        instructions = render(instructions)
+    elif type(instructions) is dict:
+        instructions = jinja2.Markup(render(instructions))
     return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None}
 
 @mode
@@ -461,7 +461,11 @@ def inventory_review_list(user, write_access, params):
     ) for i in inventory]
     rows.sort()
 
-    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action="?mode=debug")
+    count = sum(i.measurement < yesterday for i in inventory)
+
+    instructions = "Found <> %d items for inventory" % count
+
+    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action="?mode=debug", instructions=instructions)
 
 @mode
 def debug(user, write_access, params):
