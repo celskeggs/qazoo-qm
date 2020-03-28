@@ -484,6 +484,14 @@ def inventory_update(user, write_access, params):
     for p in params:
         if p.startswith("quantity.") and p.count(".") == 2:
             _, itemid, locationid = p.split(".")
+            try:
+                itemid, locationid = int(itemid), int(locationid)
+            except ValueError:
+                return {"template": "error.html", "message": "invalid item or location ID"}
+            if itemid not in items:
+                return {"template": "error.html", "message": "unrecognized item ID %d" % itemid}
+            if locationid not in locations:
+                return {"template": "error.html", "message": "unrecognized location ID %d" % locationid}
             quantity, unit = parse_quantity(params[p])
             if quantity is None:
                 return {"template": "error.html", "message": "invalid quantity %s" % params[p]}
