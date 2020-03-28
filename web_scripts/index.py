@@ -216,6 +216,7 @@ def requests(user, write_access, params):
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
         "inventorylink": "?mode=inventory_review_list&trip=%d" % (trip.uid),
+        "count": len(objects),
     }
     return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
 
