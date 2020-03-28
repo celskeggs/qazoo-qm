@@ -174,32 +174,33 @@ def requests(user, write_access, params):
     if not edit:
         rows = [
             [
-                ("", "", "", get_by_id(items, i.itemid)),
-                ("", "", "", i.description or ""),
+                ("", "", "", get_by_id(items, i.itemid)         ),
+                ("", "", "", i.description or ""                ),
                 ("", "", "", render_quantity(i.quantity, i.unit)),
-                ("", "", "", i.substitution),
-                ("", "", "", i.contact),
-                ("", "", "", costs.get(i.costid, "#REF?")),
-                ("", "", "", i.coop_date),
-                ("", "", "", i.comments),
-                ("", "", "", i.submitted_at),
-                ("", "", "", i.state),
-                ("", "", "", i.updated_at),
+                ("", "", "", i.substitution                     ),
+                ("", "", "", i.contact                          ),
+                ("", "", "", costs.get(i.costid, "#REF?")       ),
+                ("", "", "", i.coop_date                        ),
+                ("", "", "", i.comments                         ),
+                ("", "", "", i.submitted_at                     ),
+                ("", "", "", i.state                            ),
+                ("", "", "", i.updated_at                       ),
             ] for i in objects
         ]
     else: # if edit
         rows = [
             [
-                ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options", i.itemid or ""                     ),
-                ("text",             "informal_name.%d" % i.uid, "",               i.description or ""                ),
-                ("text",                  "quantity.%d" % i.uid, "",               render_quantity(i.quantity, i.unit)),
-                ("text",             "substitutions.%d" % i.uid, "",               i.substitution                     ),
-                ("dropdown-optionset", "cost_object.%d" % i.uid, "cost_objects",   i.costid                           ),
-                ("date",                 "coop_date.%d" % i.uid, "",               str(i.coop_date)                   ),
-                ("text",                  "comments.%d" % i.uid, "",               i.comments                         ),
-                ("",                                         "", "",               str(i.submitted_at)                ),
+                ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options",          i.itemid or ""                     ),
+                ("text",             "informal_name.%d" % i.uid, "",                        i.description or ""                ),
+                ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
+                ("text",             "substitutions.%d" % i.uid, "",                        i.substitution                     ),
+                ("",                                         "", "",                        i.contact                          ),
+                ("dropdown-optionset", "cost_object.%d" % i.uid, "cost_objects",            i.costid                           ),
+                ("date",                 "coop_date.%d" % i.uid, "",                        str(i.coop_date)                   ),
+                ("text",                  "comments.%d" % i.uid, "",                        i.comments                         ),
+                ("",                                         "", "",                        str(i.submitted_at)                ),
                 ("dropdown",                 "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
-                ("",                                         "", "",               str(i.updated_at)                  ),
+                ("",                                         "", "",                        str(i.updated_at)                  ),
             ] for i in objects
         ]
     instructions = {
@@ -208,7 +209,7 @@ def requests(user, write_access, params):
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=true" % trip.uid,
     }
-    return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action="?mode=request_modify&trip=%d" % trip.uid, optionsets=optionsets)
+    return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action="?mode=request_modify&trip=%d" % trip.uid, optionsets=optionsets)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
