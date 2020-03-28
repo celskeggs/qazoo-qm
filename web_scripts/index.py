@@ -172,6 +172,7 @@ def requests(user, write_access, params):
     }
 
     if not edit:
+        check = []
         rows = [
             [
                 ("", "", "", get_by_id(items, i.itemid)         ),
@@ -189,8 +190,10 @@ def requests(user, write_access, params):
         ]
         action = None
     else: # if edit
+        check = ["Edit?"]
         rows = [
             [
+                ("checkbox",                  "edit.%d" % i.uid, "",                        False                              ),
                 ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options",          i.itemid or ""                     ),
                 ("text",             "informal_name.%d" % i.uid, "",                        i.description or ""                ),
                 ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
@@ -211,7 +214,7 @@ def requests(user, write_access, params):
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
     }
-    return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
+    return editable_table("Request Review List for " + str(trip.date), check + ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
@@ -339,7 +342,7 @@ def merge_changes(target, source):
 
     return changes
 
-def handle_request_updates(user, write_access, params, trip):
+def handle_request_updates(user, write_access, params, trip, require_edit=False):
     if write_access:
         allowable_cost_ids = cost_objects_by_uids().keys()
     else:
@@ -360,6 +363,9 @@ def handle_request_updates(user, write_access, params, trip):
     any_edits = False
     for request in requests:
         if request.uid not in uids:
+            continue
+
+        if require_edit and params.get("edit.%d" % request.uid) != "on":
             continue
 
         updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request, qm=write_access))
@@ -401,7 +407,7 @@ def request_modify(user, write_access, params):
     trip = get_shopping_trip(tripid)
     if trip is None:
         return {"template": "error.html", "message": "unrecognized trip ID"}
-    res = handle_request_updates(user, write_access, params, trip)
+    res = handle_request_updates(user, write_access, params, trip, require_edit=True)
     if res is not None:
         return res
     return requests(user, write_access, {"trip": params["trip"], "edit": "true"})

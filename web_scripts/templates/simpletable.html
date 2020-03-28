@@ -74,6 +74,8 @@
             <input type="text" value="{{ cell }}" name="{{ cname }}">
             {% elif ctype == "date" %}
             <input type="date" value="{{ cell }}" name="{{ cname }}">
+            {% elif ctype == "checkbox" %}
+            <input type="checkbox" name="{{ cname }}" {% if cell %}checked{% endif %}>
             {% else %}
                 {% if cell %}
                 {{ cell }}
