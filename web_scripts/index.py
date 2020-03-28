@@ -273,19 +273,19 @@ def request_entry(user, write_access, params):
     return editable_table("Request Entry Form for " + trip_date, ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
 
 def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allowable_states):
-    costid = int_or_none(params, "cost_object" + suffix)
-    if not costid:
-        return "no cost ID specified"
-
-    if costid not in allowable_cost_ids:
-        return "attempt to submit under invalid cost ID"
-
     formal_name = int_or_none(params, "formal_name" + suffix)
     informal_name = param_as_str(params, "informal_name" + suffix, None)
     if type(informal_name) == list:
         informal_name = None
     if formal_name == None and informal_name == None:
         return None
+
+    costid = int_or_none(params, "cost_object" + suffix)
+    if not costid:
+        return "no cost ID specified"
+
+    if costid not in allowable_cost_ids:
+        return "attempt to submit under invalid cost ID"
 
     quantity, unit = parse_quantity(param_as_str(params, "quantity" + suffix, ""))
     if quantity is None:
