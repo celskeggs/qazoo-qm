@@ -73,6 +73,10 @@ def primary_shopping_trip():
     st = db.query(db.ShoppingTrip).filter_by(primary=True).all()
     return None if len(st) != 1 else st[0]
 
+def get_shopping_trip(tripid):
+    st = db.query(db.ShoppingTrip).filter_by(uid=tripid).all()
+    return None if len(st) != 1 else st[0]
+
 def cost_objects_by_uids():
     return {co.uid: co.description for co in db.query(db.CostObject).all()}
 
@@ -148,13 +152,62 @@ def trips(user, write_access, params):
 def requests(user, write_access, params):
     tripid = int_or_none(params, "trip")
     if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
         return {"template": "error.html", "message": "unrecognized trip ID"}
+    edit = (param_as_str(params, "edit", "") == "true" and write_access)
 
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
+
+    formal_options = [("", "")] + sorted(items.items(), key=lambda x: x[1])
+    cost_objects = sorted(costs.items())
+
     objects = db.query(db.Request).filter_by(tripid=tripid).order_by(db.Request.submitted_at).all()
-    rows = build_table(objects, lambda i: get_by_id(items, i.itemid), "description", lambda i: render_quantity(i.quantity, i.unit), "substitution", "contact", lambda i: costs.get(i.costid, "#REF?"), "coop_date", "comments", "submitted_at", "state", "updated_at")
-    return simple_table("Request Review List", ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows)
+
+    optionsets = {
+        "formal_options": formal_options,
+        "cost_objects": cost_objects,
+    }
+
+    if not edit:
+        rows = build_table(
+            objects,
+            lambda i: get_by_id(items, i.itemid),
+            "description",
+            lambda i: render_quantity(i.quantity, i.unit),
+            "substitution",
+            "contact",
+            lambda i: costs.get(i.costid, "#REF?"),
+            "coop_date",
+            "comments",
+            "submitted_at",
+            "state",
+            "updated_at",
+        )
+    else: # if edit
+        rows = [
+            [
+                ("dropdown-optionset", "formal_name.%d" % i.uid, "formal_options", i.itemid or ""                     ),
+                ("text",             "informal_name.%d" % i.uid, "",               i.description or ""                ),
+                ("text",                  "quantity.%d" % i.uid, "",               render_quantity(i.quantity, i.unit)),
+                ("text",             "substitutions.%d" % i.uid, "",               i.substitution                     ),
+                ("dropdown-optionset", "cost_object.%d" % i.uid, "cost_objects",   i.costid                           ),
+                ("date",                 "coop_date.%d" % i.uid, "",               str(i.coop_date)                   ),
+                ("text",                  "comments.%d" % i.uid, "",               i.comments                         ),
+                ("",                                         "", "",               str(i.submitted_at)                ),
+                ("dropdown",                 "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
+                ("",                                         "", "",               str(i.updated_at)                  ),
+            ] for i in objects
+        ]
+    instructions = {
+        "template": "reviewlist.html",
+        "can_edit": write_access,
+        "edit": edit,
+        "editlink": "?mode=requests&trip=%d&edit=true" % trip.uid,
+    }
+    return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action="?mode=request_modify&trip=%d" % trip.uid, optionsets=optionsets)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
@@ -282,15 +335,13 @@ def merge_changes(target, source):
 
     return changes
 
-@mode
-def request_submit(user, write_access, params):
-    trip = primary_shopping_trip()
-    if trip is None or params.get("trip","") != str(trip.uid):
-        return {"template": "error.html", "message": "primary shopping trip changed between page load and form submit"}
-
-    allowable_cost_ids = allowable_cost_object_uids(user)
-    if allowable_cost_ids is None:
-        return {"template": "error.html", "message": "could not find cost object for user %s" % user}
+def handle_request_updates(user, write_access, params, trip):
+    if write_access:
+        allowable_cost_ids = cost_objects_by_uids().keys()
+    else:
+        allowable_cost_ids = allowable_cost_object_uids(user)
+        if allowable_cost_ids is None:
+            return {"template": "error.html", "message": "could not find cost object for user %s" % user}
 
     uids = {int(param[6:]) for param in params if param.startswith("state.") and param[6:].isdigit()}
     requests = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).all()
@@ -304,7 +355,7 @@ def request_submit(user, write_access, params):
         if request.uid not in uids:
             continue
 
-        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request))
+        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request, qm=write_access))
         if updated_request is None:
             return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
         if type(updated_request) == str:
@@ -320,8 +371,31 @@ def request_submit(user, write_access, params):
     elif any_edits:
         # needed to make sure any edits from before actually get applied; db.add does this automatically
         db.commit()
+    return None
 
+@mode
+def request_submit(user, write_access, params):
+    trip = primary_shopping_trip()
+    if trip is None or params.get("trip","") != str(trip.uid):
+        return {"template": "error.html", "message": "primary shopping trip changed between page load and form submit"}
+
+    res = handle_request_updates(user, False, params, trip)
+    if res is not None:
+        return res
     return request_entry(user, write_access, {})
+
+@mode
+def request_modify(user, write_access, params):
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+    res = handle_request_updates(user, write_access, params, trip)
+    if res is not None:
+        return res
+    return requests(user, write_access, {"trip": params["trip"]})
 
 @mode
 def debug(user, write_access, params):

@@ -1,0 +1,7 @@
+{% if can_edit %}
+    {% if edit %}
+        <a href="{{ editlink }}">Exit Edit view.</a>
+    {% else %}
+        <a href="{{ editlink }}">Go to Edit view.</a>
+    {% endif %}
+{% endif %}
