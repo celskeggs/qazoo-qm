@@ -500,7 +500,7 @@ def inventory_update(user, write_access, params):
                 return {"template": "error.html", "message": "invalid quantity %s" % params[p]}
             updates[(itemid, locationid)] = (quantity, unit)
 
-    rows = [(items[itemid], locations[locationid], quantity, unit) for (itemid, locationid), (quantity, unit) in updates.items()]
+    rows = [(items[itemid], locations[locationid], str(quantity), unit) for (itemid, locationid), (quantity, unit) in updates.items()]
     rows.sort()
 
     return simple_table("Debug Review", ["Item Name", "Location", "Quantity", "Unit"], rows)
