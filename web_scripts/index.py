@@ -455,13 +455,13 @@ def inventory_review_list(user, write_access, params):
         ("", "", "", locations[i.locationid]),
         ("", "", "", items[i.itemid]),
         ("", "", "", render_quantity(i.quantity, i.unit)),
-        ("text", "", "", ""),
+        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", ""),
         ("", "", "", str(i.measurement)),
         ("", "", "", ", ".join(map(str,request_ids[i.itemid]))),
     ) for i in inventory]
     rows.sort()
 
-    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows)
+    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action="?mode=debug")
 
 @mode
 def debug(user, write_access, params):
