@@ -346,7 +346,10 @@ def handle_request_updates(user, write_access, params, trip):
             return {"template": "error.html", "message": "could not find cost object for user %s" % user}
 
     uids = {int(param[6:]) for param in params if param.startswith("state.") and param[6:].isdigit()}
-    requests = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).all()
+    if write_access:
+        requests = db.query(db.Request).filter_by(tripid=trip.uid).all()
+    else:
+        requests = db.query(db.Request).filter_by(tripid=trip.uid, contact=user).all()
     available = set(request.uid for request in requests)
     for uid in uids:
         if uid not in available:
@@ -388,6 +391,8 @@ def request_submit(user, write_access, params):
 
 @mode
 def request_modify(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
     tripid = int_or_none(params, "trip")
     if tripid is None:
         return {"template": "error.html", "message": "invalid trip ID"}
