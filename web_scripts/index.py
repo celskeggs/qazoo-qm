@@ -450,10 +450,18 @@ def inventory_review_list(user, write_access, params):
     locations = locations_by_uids()
     items = item_names_by_uids()
     yesterday = datetime.date.fromordinal(datetime.date.today().toordinal() - 1)
-    rows = [("yes" if i.measurement >= yesterday else "no", locations[i.locationid], items[i.itemid], render_quantity(i.quantity, i.unit), str(i.measurement), ", ".join(map(str,request_ids[i.itemid]))) for i in inventory]
+    rows = [(
+        ("", "", "", "yes" if i.measurement >= yesterday else "no"),
+        ("", "", "", locations[i.locationid]),
+        ("", "", "", items[i.itemid]),
+        ("", "", "", render_quantity(i.quantity, i.unit)),
+        ("text", "", "", ""),
+        ("", "", "", str(i.measurement)),
+        ("", "", "", ", ".join(map(str,request_ids[i.itemid]))),
+    ) for i in inventory]
     rows.sort()
 
-    return simple_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows)
+    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows)
 
 @mode
 def debug(user, write_access, params):
