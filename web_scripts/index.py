@@ -463,7 +463,7 @@ def inventory_review_list(user, write_access, params):
 
     count = sum(i.measurement < yesterday for i in inventory)
 
-    instructions = "Found <> %d items for inventory" % count
+    instructions = "Found %d items for inventory" % count
 
     return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action="?mode=debug", instructions=instructions)
 
