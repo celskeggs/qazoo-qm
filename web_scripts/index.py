@@ -483,7 +483,9 @@ def inventory_update(user, write_access, params):
     locations = locations_by_uids()
     items = item_names_by_uids()
 
-    updates = {}
+    today = datetime.date.today()
+
+    any_updates = False
     for p in params:
         if p.startswith("quantity.") and p.count(".") == 2:
             _, itemid, locationid = p.split(".")
@@ -498,12 +500,20 @@ def inventory_update(user, write_access, params):
             quantity, unit = parse_quantity(params[p])
             if quantity is None:
                 return {"template": "error.html", "message": "invalid quantity %s" % params[p]}
-            updates[(itemid, locationid)] = (quantity, unit)
 
-    rows = [(items[itemid], locations[locationid], str(quantity), unit) for (itemid, locationid), (quantity, unit) in updates.items()]
-    rows.sort()
+            update = db.Inventory(
+                itemid=itemid,
+                quantity=quantity,
+                unit=unit,
+                locationid=locationid,
+                measurement=today,
+            )
+            db.add_no_commit(update)
+            any_updates = True
+    if any_updates:
+        db.commit()
 
-    return simple_table("Debug Review", ["Item Name", "Location", "Quantity", "Unit"], rows)
+    return inventory_review_list(user, write_access, params)
 
 @mode
 def debug(user, write_access, params):
