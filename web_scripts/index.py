@@ -466,7 +466,11 @@ def inventory_review_list(user, write_access, params):
 
     instructions = "Found %d items for inventory" % count
 
-    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action="?mode=debug", instructions=instructions)
+    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action=("?mode=debug" if write_access else None), instructions=instructions)
+
+@mode
+def inventory_update(user, write_access, params):
+    pass
 
 @mode
 def debug(user, write_access, params):
@@ -488,6 +492,9 @@ def process_index():
 
     if mode not in modes:
         return {"template": "notfound.html"}
+
+    if param_as_str(params, "act") == "mortal":
+        write_access = False
 
     return modes[mode](user, write_access, params)
 
