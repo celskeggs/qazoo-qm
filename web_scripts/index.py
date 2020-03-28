@@ -262,6 +262,7 @@ def request_entry(user, write_access, params):
         ] for i in objects
     ]
     creation = [
+        ("",                                  "", "",               ""                   ),
         ("dropdown-optionset", "formal_name.new", "formal_options", ""                   ),
         ("text",             "informal_name.new", "",               ""                   ),
         ("text",                  "quantity.new", "",               "0 oz"               ),
