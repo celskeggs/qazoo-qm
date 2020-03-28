@@ -10,15 +10,20 @@
     <p>You are: {{ user }}.{% if write_access %} You have full QM access.{% endif %}</p>
     <p>Please contact your quartermaster with any questions.</p>
 
-    <p>Tasks:</p>
+    <p>Key tasks:</p>
 
     <ul>
         <li><a href="?mode=request_entry">File an item request</a></li>
-        <li><a href="?mode=trips">Browse all requests by shopping trip</a></li>
-        <li>See your reimbursement status</li>
         <li><a href="?mode=inventory">Review current inventory</a></li>
+        <li>See your reimbursement status</li>
+    </ul>
+
+    <p>Secondary tasks:</p>
+
+    <ul>
+        <li><a href="?mode=trips">Browse all requests by shopping trip</a></li>
         <li><a href="?mode=locations">Browse storage locations</a></li>
-        <li><a href="?mode=item_types">Review all known types of items</a></li>
+        <li><a href="?mode=item_types">Review all known types of item</a></li>
         <li><a href="?mode=cost">Browse cost objects</a></li>
     </ul>
 </body>
