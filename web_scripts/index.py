@@ -187,6 +187,7 @@ def requests(user, write_access, params):
                 ("", "", "", i.updated_at                       ),
             ] for i in objects
         ]
+        action = None
     else: # if edit
         rows = [
             [
@@ -203,13 +204,14 @@ def requests(user, write_access, params):
                 ("",                                         "", "",                        str(i.updated_at)                  ),
             ] for i in objects
         ]
+        action = "?mode=request_modify&trip=%d" % trip.uid
     instructions = {
         "template": "reviewlist.html",
         "can_edit": write_access,
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
     }
-    return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action="?mode=request_modify&trip=%d" % trip.uid, optionsets=optionsets)
+    return editable_table("Request Review List for " + str(trip.date), ["Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
