@@ -480,6 +480,9 @@ def inventory_update(user, write_access, params):
     if trip is None:
         return {"template": "error.html", "message": "unrecognized trip ID"}
 
+    locations = locations_by_uids()
+    items = item_names_by_uids()
+
     updates = {}
     for p in params:
         if p.startswith("quantity.") and p.count(".") == 2:
@@ -496,9 +499,6 @@ def inventory_update(user, write_access, params):
             if quantity is None:
                 return {"template": "error.html", "message": "invalid quantity %s" % params[p]}
             updates[(itemid, locationid)] = (quantity, unit)
-
-    locations = locations_by_uids()
-    items = item_names_by_uids()
 
     rows = [(items[itemid], locations[locationid], quantity, unit) for (itemid, locationid), (quantity, unit) in updates.items()]
     rows.sort()
