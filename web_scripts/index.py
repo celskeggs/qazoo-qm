@@ -467,7 +467,7 @@ def inventory_review_list(user, write_access, params):
 
     instructions = "Found %d items for inventory" % count
 
-    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action=("?mode=inventory_update" if write_access else None), instructions=instructions)
+    return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action=("?mode=inventory_update&trip=%d" % trip.uid if write_access else None), instructions=instructions)
 
 @mode
 def inventory_update(user, write_access, params):
@@ -484,7 +484,10 @@ def inventory_update(user, write_access, params):
     for p in params:
         if p.startswith("quantity.") and p.count(".") == 2:
             _, itemid, locationid = p.split(".")
-            updates[(itemid, locationid)] = parse_quantity(params[p])
+            quantity, unit = parse_quantity(params[p])
+            if quantity is None:
+                return {"template": "error.html", "message": "invalid quantity %s" % params[p]}
+            updates[(itemid, locationid)] = (quantity, unit)
 
     locations = locations_by_uids()
     items = item_names_by_uids()
