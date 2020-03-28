@@ -32,11 +32,11 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0):
+def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": "", "creation": None, "action": None, "optionsets": None}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
 def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None):
     if instructions is None:
