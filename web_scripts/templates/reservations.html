@@ -26,14 +26,16 @@
 
     <p><b>Please be careful when using any of these ingredients.</b></p>
 
-    <p><b>You can use them, but only if you ensure that the minimum quantity is left afterward.</b></p>
+    <p><b>You can use them, but only if you ensure that the minimum quantities are left afterward.</b></p>
 
-    <p>Each entry has a date after which this requirement no longer applies, because that day involves the last co-op cycle that requires the ingredient. After that day’s co-op, you may disregard that part of this notice.</p>
+    <p>Each entry has a date after which this requirement no longer applies, because that day involves the co-op cycle that requires the ingredient. After that day’s co-op, you may disregard that line of this notice.</p>
+
+    <p>If there are two entries for an ingredient, and neither date has passed, the <i>sum</i> of the quantities must be reserved.</p>
 
     <p><b>LOCATION: {{ location }}</b></p>
 
     <table border="1">
-    <tr class="header"><td>Item Description</td><td>Quantity Required</td><td>Last Date Required</td></tr>
+    <tr class="header"><td>Item Description</td><td>Quantity Required</td><td>Date Required</td></tr>
     {% for item, quantity, date in reservations %}
     <tr><td>{{ item }}</td><td>{{ quantity }}</td><td>{{ date }}</td></tr>
     {% endfor %}
