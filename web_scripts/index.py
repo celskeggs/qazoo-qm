@@ -65,6 +65,15 @@ def item_types(user, write_access, params):
 
 @mode
 def item_types_edit(user, write_access, params):
+    tripid = int_or_none(params, "trip")
+    if tripid is not None:
+        trip = get_shopping_trip(tripid)
+        if trip is None:
+            return {"template": "error.html", "message": "unrecognized trip ID"}
+
+        requests = db.query(db.Request).filter_by(tripid=tripid).all()
+        items = {r.itemid for r in requests}
+
     objects = db.query(db.ItemType).all()
     rows = [
         [
@@ -72,9 +81,9 @@ def item_types_edit(user, write_access, params):
             ("", "", "", i.name),
             ("", "", "", i.standard_unit),
             ("text", "aisle.%d" % i.uid, "", i.aisle or ""),
-        ] for i in objects
+        ] for i in objects if (tripid is None or i.uid in items)
     ]
-    return editable_table("Edit Item Types", ["ID", "Name", "Standard Unit", "Aisle"], rows, action=("?mode=item_types_update" if write_access else None))
+    return editable_table("Edit Item Types", ["ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" if write_access else None))
 
 @mode
 def item_types_update(user, write_access, params):
