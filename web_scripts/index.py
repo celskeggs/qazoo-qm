@@ -536,7 +536,7 @@ def reservations(user, write_access, params):
 
     return {
         "template": "reservations.html",
-        "locations": "locations",
+        "locations": locations,
     }
 
 @mode
