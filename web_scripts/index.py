@@ -523,7 +523,7 @@ def reservations(user, write_access, params):
 
     by_location = {}
     for r in reservations:
-        loc = loc_name.get(r.locationid, "#REF?")
+        loc = loc_names.get(r.locationid, "#REF?")
         if loc not in by_location:
             by_location[loc] = []
         by_location[loc].append((item_names.get(r.itemid, "#REF?"), print_quantity(r.quantity, r.unit), r.until))
