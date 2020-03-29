@@ -259,6 +259,7 @@ def requests(user, write_access, params):
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
         "inventorylink": "?mode=inventory_review_list&trip=%d" % (trip.uid),
+        "comparelink": "?mode=compare_inventory&trip=%d" % (trip.uid),
         "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
         "count": len(objects),
     }
@@ -687,7 +688,7 @@ def compare_inventory(user, write_access, params):
     ]
     rows += [
         [
-            ("",                                         "", "",                        items.get(i.uid, "#REF?")          ),
+            ("",                                         "", "",                        items.get(i.itemid, "#REF?")       ),
             ("",                                         "", "",                        ""                                 ),
             ("",                                         "", "",                        ""                                 ),
             ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
