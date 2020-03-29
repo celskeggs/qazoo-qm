@@ -763,7 +763,7 @@ def shopping_list(user, write_access, params):
             ("", "", "", i.comments),
         ] for i in objects
     ]
-    rows.sort(key=lambda i: (to_int_or_none(i[1][3].split("?")[0].split(" ")[0].split(".")[-1]) or 100000, i[2], to_int_or_none(i[3][3].split(" ")[0]), i[4], i[5], i[6]))
+    rows.sort(key=lambda i: (i[1][3].split("?")[0].split(" ")[0].split(".")[0], to_int_or_none(i[1][3].split("?")[0].split(" ")[0].split(".")[-1]) or 100000, i[2], to_int_or_none(i[3][3].split(" ")[0]), i[4], i[5], i[6]))
     return editable_table("Shopping List for " + str(trip.date), ["", "Aisle", "Item Name", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Comments"], rows)
 
 @mode
