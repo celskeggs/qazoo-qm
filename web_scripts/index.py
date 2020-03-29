@@ -526,7 +526,7 @@ def reservations(user, write_access, params):
         loc = loc_names.get(r.locationid, "#REF?")
         if loc not in by_location:
             by_location[loc] = []
-        by_location[loc].append((item_names.get(r.itemid, "#REF?"), print_quantity(r.quantity, r.unit), r.until))
+        by_location[loc].append((item_names.get(r.itemid, "#REF?"), render_quantity(r.quantity, r.unit), r.until))
 
     for table in by_location.values():
         table.sort()
