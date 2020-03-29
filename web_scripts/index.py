@@ -515,6 +515,10 @@ def inventory_update(user, write_access, params):
     return inventory_review_list(user, write_access, params)
 
 @mode
+def reservations(user, write_access, params):
+    pass
+
+@mode
 def debug(user, write_access, params):
     return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([(k, sorted(v) if type(v) == list else v) for k, v in params.items()]))
 

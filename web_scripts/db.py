@@ -101,6 +101,15 @@ class Request(SQLBase):
     updated_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
     state = sqlalchemy.Column(sqlalchemy.Enum(RequestState.VALUES), nullable=False)
 
+class Reservation(SQLBase):
+    __tablename__ = "reservation"
+    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
+    until = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
+    itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
+    locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
+    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
+    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
+
 #class AisleInfo(SQLBase):
 #    __tablename__ == "aisle_info"
 #    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
