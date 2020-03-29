@@ -568,7 +568,7 @@ def reservation_preparation(user, write_access, params):
 
     rows = [(
         ("", "", "", items[i.itemid]),
-        ("dropdown", "location.%d" % i.itemid, [("", "")] + sorted(locations.items()), likely_locations.get(i.itemid,"")),
+        ("dropdown", "location.%d" % i.uid, [("", "")] + sorted(locations.items()), likely_locations.get(i.itemid,"")),
         ("", "", "", render_quantity(i.quantity, i.unit)),
         ("", "", "", i.coop_date),
     ) for i in requests]
@@ -594,7 +594,7 @@ def reservations_submit(user, write_access, params):
 
     count = 0
     for r in requests:
-        locid = params.get("location.%d" % r.itemid)
+        locid = params.get("location.%d" % (r.uid))
         if not locid:
             continue
         db.add_no_commit(db.Reservation(
