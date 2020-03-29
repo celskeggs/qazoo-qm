@@ -733,6 +733,9 @@ def update_states(user, write_access, params):
         return res
     return compare_inventory(user, write_access, {"trip": params["trip"], "edit": "true"})
 
+def to_int_or_none(x):
+    return int(x) if x.isdigit() else None
+
 @mode
 def shopping_list(user, write_access, params):
     tripid = int_or_none(params, "trip")
@@ -760,7 +763,7 @@ def shopping_list(user, write_access, params):
             ("", "", "", i.comments),
         ] for i in objects
     ]
-    rows.sort()
+    rows.sort(key=lambda i: (to_int_or_none(i[1].split(".")[-1]), i[2], to_int_or_none(i[3].split(".")[0]), i[4], i[5], i[6]))
     return editable_table("Shopping List for " + str(trip.date), ["", "Aisle", "Item Name", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Comments"], rows)
 
 @mode
