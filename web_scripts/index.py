@@ -570,7 +570,7 @@ def reservation_preparation(user, write_access, params):
         ("", "", "", items[i.itemid]),
         ("dropdown", "location.%d" % i.itemid, sorted(locations.items()), likely_locations.get(i.itemid,"")),
         ("", "", "", render_quantity(i.quantity, i.unit)),
-        ("", "", "", i.until),
+        ("", "", "", i.coop_date),
     ) for i in requests]
     rows.sort()
 
