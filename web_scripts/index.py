@@ -215,6 +215,7 @@ def requests(user, write_access, params):
         "edit": edit,
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
         "inventorylink": "?mode=inventory_review_list&trip=%d" % (trip.uid),
+        "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
         "count": len(objects),
     }
     return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
@@ -537,6 +538,80 @@ def reservations(user, write_access, params):
     return {
         "template": "reservations.html",
         "locations": locations,
+    }
+
+@mode
+def reservation_preparation(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.tripid == tripid, db.Request.state.in_([db.RequestState.accepted, db.RequestState.to_purchase, db.RequestState.to_reserve]), db.Request.coop_date != None).all()
+
+    inventory = db.query(db.Inventory).all()
+    possible_locations = {}
+    for i in inventory:
+        if i.itemid not in possible_locations:
+            possible_locations[i.itemid] = set()
+        possible_locations[i.itemid].add(i.locationid)
+
+    locations = locations_by_uids()
+    items = item_names_by_uids()
+
+    likely_locations = {itemid: locations[list(s)[0]] for itemid, s in possible_locations.items() if len(s) == 1 and list(s)[0] in locations}
+
+    rows = [(
+        ("", "", "", items[i.itemid]),
+        ("dropdown", "location.%d" % i.itemid, sorted(locations.items()), likely_locations.get(i.itemid,"")),
+        ("", "", "", render_quantity(i.quantity, i.unit)),
+        ("", "", "", i.until),
+    ) for i in requests]
+    rows.sort()
+
+    instructions = "Found %d reservations for submission" % count
+
+    return editable_table("Inventory Incremental Review", ["Item", "Location", "Quantity", "Date"], rows, action="?mode=reservations_submit&trip=%d" % trip.uid, instructions=instructions)
+
+@mode
+def reservations_submit(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.tripid == tripid, db.Request.state.in_([db.RequestState.accepted, db.RequestState.to_purchase, db.RequestState.to_reserve]), db.Request.coop_date != None).all()
+
+    count = 0
+    for r in requests:
+        locid = params.get("location.%d" % r.itemid)
+        if not locid:
+            continue
+        db.add_no_commit(db.Reservation(
+            until = r.coop_date,
+            itemid = r.itemid,
+            locationid = locid,
+            quantity = r.quantity,
+            unit = r.unit,
+        ))
+        count += 1
+    if count:
+        db.commit()
+
+    return {
+        "template": "submitted.html",
+        "instructions": "Submitted %d reservations (%d skipped)" % (count, len(requests) - count),
+        "target": "?mode=reservations",
     }
 
 @mode
