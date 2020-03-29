@@ -393,7 +393,7 @@ def merge_changes(target, source):
 
     return changes
 
-def handle_request_updates(user, write_access, params, trip, require_edit=False):
+def handle_request_updates(user, write_access, params, trip, require_edit=False, state_only=False):
     if write_access:
         allowable_cost_ids = cost_objects_by_uids().keys()
     else:
@@ -419,17 +419,29 @@ def handle_request_updates(user, write_access, params, trip, require_edit=False)
         if require_edit and params.get("edit.%d" % request.uid) != "on":
             continue
 
-        updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request, qm=write_access))
-        if updated_request is None:
-            return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
-        if type(updated_request) == str:
-            return {"template": "error.html", "message": updated_request}
-        if merge_changes(request, updated_request):
-            any_edits = True
+        if state_only:
+            key = "state.%d" % request.uid
+            state = params.get(key)
+            if state is not None and request.state != state:
+                if state not in allowable_states(request, qm=write_access):
+                    return {"template": "error.html", "message": "invalid state: %s" % repr(state)}
+                request.state = state
+                any_edits = True
+        else:
+            updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request, qm=write_access))
+            if updated_request is None:
+                return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
+            if type(updated_request) == str:
+                return {"template": "error.html", "message": updated_request}
+            if merge_changes(request, updated_request):
+                any_edits = True
 
-    new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=[db.RequestState.draft])
-    if type(new_request) == str:
-        return {"template": "error.html", "message": new_request}
+    if not state_only:
+        new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=[db.RequestState.draft])
+        if type(new_request) == str:
+            return {"template": "error.html", "message": new_request}
+    else:
+        new_request = None
     if new_request is not None:
         db.add(new_request)
     elif any_edits:
@@ -693,14 +705,29 @@ def compare_inventory(user, write_access, params):
             ("",                                         "", "",                        ""                                 ),
             ("",                                         "", "",                        ""                                 ),
             ("",                                         "", "",                        ""                                 ),
-            ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
+            ("",                                         "", "",                        render_quantity(i.quantity, i.unit)),
             ("",                                         "", "",                        "INVENTORY"                        ),
             ("",                                         "", "",                        str(i.measurement)                 ),
         ] for i in inventory
     ]
     rows.sort()
-    action = "?mode=debug&trip=%d" % trip.uid
+    action = "?mode=update_states&trip=%d" % trip.uid
     return editable_table("Inventory Comparison for " + str(trip.date), ["Item Name", "Requested Quantity", "Comments", "Cost Object", "Available Quantity", "State", "Updated At"], rows, action=action)
+
+@mode
+def update_states(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+    res = handle_request_updates(user, write_access, params, trip, require_edit=False, state_only=True)
+    if res is not None:
+        return res
+    return compare_inventory(user, write_access, {"trip": params["trip"], "edit": "true"})
 
 @mode
 def debug(user, write_access, params):
