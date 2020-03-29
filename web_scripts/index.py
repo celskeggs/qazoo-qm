@@ -516,7 +516,28 @@ def inventory_update(user, write_access, params):
 
 @mode
 def reservations(user, write_access, params):
-    pass
+    today = datetime.date.today()
+    reservations = db.query(db.Reservation).filter(db.Reservation.until >= today).all()
+    loc_names = locations_by_uids()
+    item_names = item_names_by_uids()
+
+    by_location = {}
+    for r in reservations:
+        loc = loc_name.get(r.locationid, "#REF?")
+        if loc not in by_location:
+            by_location[loc] = []
+        by_location[loc].append((item_names.get(r.itemid, "#REF?"), print_quantity(r.quantity, r.unit), r.until))
+
+    for table in by_location.values():
+        table.sort()
+
+    locations = by_location.items()
+    locations.sorted()
+
+    return {
+        "template": "reservations.html",
+        "locations": "locations",
+    }
 
 @mode
 def debug(user, write_access, params):
