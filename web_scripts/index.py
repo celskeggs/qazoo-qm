@@ -750,17 +750,18 @@ def shopping_list(user, write_access, params):
 
     rows = [
         [
-            get_by_id(aisles, i.itemid),
-            get_by_id(items, i.itemid),
-            render_quantity(i.quantity, i.unit),
-            i.substitution,
-            i.contact,
-            costs.get(i.costid, "#REF?"),
-            i.comments,
+            ("checkbox", "", "", ""),
+            ("", "", "", get_by_id(aisles, i.itemid)),
+            ("", "", "", get_by_id(items, i.itemid)),
+            ("", "", "", render_quantity(i.quantity, i.unit)),
+            ("", "", "", i.substitution),
+            ("", "", "", i.contact),
+            ("", "", "", costs.get(i.costid, "#REF?")),
+            ("", "", "", i.comments),
         ] for i in objects
     ]
     rows.sort()
-    return simple_table("Shopping List for " + str(trip.date), ["Aisle", "Item Name", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Comments"], rows)
+    return editable_table("Shopping List for " + str(trip.date), ["", "Aisle", "Item Name", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Comments"], rows)
 
 @mode
 def debug(user, write_access, params):
