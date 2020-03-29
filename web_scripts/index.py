@@ -60,8 +60,42 @@ def locations(user, write_access, params):
 @mode
 def item_types(user, write_access, params):
     objects = db.query(db.ItemType).all()
-    rows = build_table(objects, "name", "standard_unit")
-    return simple_table("Item Type List", ["Name", "Standard Unit"], rows)
+    rows = build_table(objects, "name", "standard_unit", "aisle")
+    return simple_table("Item Type List", ["Name", "Standard Unit", "Aisle"], rows)
+
+@mode
+def item_types_edit(user, write_access, params):
+    objects = db.query(db.ItemType).all()
+    rows = [
+        [
+            ("", "", "", i.uid),
+            ("", "", "", i.name),
+            ("", "", "", i.standard_unit),
+            ("text", "aisle.%d" % i.uid, "", i.aisle),
+        ] for i in objects
+    ]
+    return editable_table("Edit Item Types", ["ID", "Name", "Standard Unit", "Aisle"], rows, action=("?mode=item_types_update" if write_access else None))
+
+@mode
+def item_types_update(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    types = db.query(db.ItemType).all()
+    lookup = {t.uid: t for t in types}
+
+    count = 0
+    for p in params:
+        if p.startswith("aisle.") and p[6:].isdigit():
+            uid = int(p[6:])
+            if uid not in lookup:
+                return {"template": "error.html", "message": "no such item type with UID %d" % uid}
+            t = lookup[uid]
+            t.aisle = params[p] if params[p] else None
+            count += 1
+    if count:
+        db.commit()
+    return item_types_edit(user, write_access, params)
 
 def item_names_by_uids():
     return {it.uid: it.name for it in db.query(db.ItemType).all()}

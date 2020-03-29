@@ -10,6 +10,7 @@ class ItemType(SQLBase):
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.String(127), nullable=False)
     standard_unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
+    aisle = sqlalchemy.Column(sqlalchemy.String(63), nullable=True)
 
 class Location(SQLBase):
     __tablename__ = "location"
@@ -109,24 +110,6 @@ class Reservation(SQLBase):
     locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
     unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
-
-#class AisleInfo(SQLBase):
-#    __tablename__ == "aisle_info"
-#    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
-#    aisle = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
-
-#class AisleDisposition(enum.Enum):
-#    most_likely = 1
-#    alternate = 2
-#    confirmed = 3
-#    other = 4
-
-#class AisleAvailability(SQLBase):
-#    __tablename__ = "aisle_availability"
-#    uid = sqlalchemy.Colunm(sqlalchemy.Integer(), nullable=False, primary_key=True)
-#    itemid = sqlalchemy.Colunm(sqlalchemy.Integer(), nullable=False)
-#    aisleid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-#    disposition = sqlalchemy.Column(sqlalchemy.Enum(AisleDisposition), nullable=False)
 
 #class ShoppingIntention(SQLBase):
 #    __tablename__ == "shopping_intention"
