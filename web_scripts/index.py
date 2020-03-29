@@ -711,7 +711,7 @@ def compare_inventory(user, write_access, params):
         ] for i in inventory
     ]
     rows.sort()
-    action = "?mode=update_states&trip=%d" % trip.uid
+    action = ("?mode=update_states&trip=%d" % trip.uid if write_access else None)
     return editable_table("Inventory Comparison for " + str(trip.date), ["Item Name", "Requested Quantity", "Comments", "Cost Object", "Available Quantity", "State", "Updated At"], rows, action=action)
 
 @mode
