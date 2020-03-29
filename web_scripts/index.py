@@ -681,6 +681,7 @@ def compare_inventory(user, write_access, params):
             ("",                                         "", "",                        get_by_id(items, i.itemid)         ),
             ("",                                         "", "",                        render_quantity(i.quantity, i.unit)),
             ("",                                         "", "",                        i.comments                         ),
+            ("",                                         "", "",                        get_by_id(costs, i.cost_object)    ),
             ("",                                         "", "",                        ""                                 ),
             ("dropdown",                 "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
             ("",                                         "", "",                        str(i.updated_at)                  ),
@@ -691,6 +692,7 @@ def compare_inventory(user, write_access, params):
             ("",                                         "", "",                        items.get(i.itemid, "#REF?")       ),
             ("",                                         "", "",                        ""                                 ),
             ("",                                         "", "",                        ""                                 ),
+            ("",                                         "", "",                        ""                                 ),
             ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
             ("",                                         "", "",                        "INVENTORY"                        ),
             ("",                                         "", "",                        str(i.measurement)                 ),
@@ -698,7 +700,7 @@ def compare_inventory(user, write_access, params):
     ]
     rows.sort()
     action = "?mode=debug&trip=%d" % trip.uid
-    return editable_table("Inventory Comparison for " + str(trip.date), ["Item Name", "Requested Quantity", "Comments", "Available Quantity", "State", "Updated At"], rows, action=action)
+    return editable_table("Inventory Comparison for " + str(trip.date), ["Item Name", "Requested Quantity", "Comments", "Cost Object", "Available Quantity", "State", "Updated At"], rows, action=action)
 
 @mode
 def debug(user, write_access, params):
