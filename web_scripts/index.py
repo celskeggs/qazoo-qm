@@ -532,7 +532,7 @@ def reservations(user, write_access, params):
         table.sort()
 
     locations = by_location.items()
-    locations.sorted()
+    locations.sort()
 
     return {
         "template": "reservations.html",
