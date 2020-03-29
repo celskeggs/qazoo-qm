@@ -71,7 +71,7 @@ def item_types_edit(user, write_access, params):
             ("", "", "", i.uid),
             ("", "", "", i.name),
             ("", "", "", i.standard_unit),
-            ("text", "aisle.%d" % i.uid, "", i.aisle),
+            ("text", "aisle.%d" % i.uid, "", i.aisle or ""),
         ] for i in objects
     ]
     return editable_table("Edit Item Types", ["ID", "Name", "Standard Unit", "Aisle"], rows, action=("?mode=item_types_update" if write_access else None))
