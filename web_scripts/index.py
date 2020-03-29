@@ -681,7 +681,7 @@ def compare_inventory(user, write_access, params):
             ("",                                         "", "",                        get_by_id(items, i.itemid)         ),
             ("",                                         "", "",                        render_quantity(i.quantity, i.unit)),
             ("",                                         "", "",                        i.comments                         ),
-            ("",                                         "", "",                        get_by_id(costs, i.cost_object)    ),
+            ("",                                         "", "",                        get_by_id(costs, i.costid)         ),
             ("",                                         "", "",                        ""                                 ),
             ("dropdown",                 "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
             ("",                                         "", "",                        str(i.updated_at)                  ),
