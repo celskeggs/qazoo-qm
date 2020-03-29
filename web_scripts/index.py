@@ -530,7 +530,7 @@ def reservations(user, write_access, params):
         by_location[loc].append((item_names.get(r.itemid, "#REF?"), render_quantity(r.quantity, r.unit), r.until))
 
     for table in by_location.values():
-        table.sort()
+        table.sort(key=lambda r: (r[0], r[2], r[1]))
 
     locations = by_location.items()
     locations.sort()
