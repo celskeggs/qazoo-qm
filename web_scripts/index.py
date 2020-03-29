@@ -110,6 +110,9 @@ def item_types_update(user, write_access, params):
 def item_names_by_uids():
     return {it.uid: it.name for it in db.query(db.ItemType).all()}
 
+def item_aisles_by_uids():
+    return {it.uid: it.aisle for it in db.query(db.ItemType).all()}
+
 def locations_by_uids():
     return {loc.uid: loc.name for loc in db.query(db.Location).all()}
 
@@ -260,6 +263,7 @@ def requests(user, write_access, params):
         "editlink": "?mode=requests&trip=%d&edit=%s" % (trip.uid, str(not edit).lower()),
         "inventorylink": "?mode=inventory_review_list&trip=%d" % (trip.uid),
         "comparelink": "?mode=compare_inventory&trip=%d" % (trip.uid),
+        "shoppinglink": "?mode=shopping_list&trip=%d" % (trip.uid),
         "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
         "count": len(objects),
     }
@@ -728,6 +732,35 @@ def update_states(user, write_access, params):
     if res is not None:
         return res
     return compare_inventory(user, write_access, {"trip": params["trip"], "edit": "true"})
+
+@mode
+def shopping_list(user, write_access, params):
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    items = item_names_by_uids()
+    aisles = item_aisles_by_uids()
+    costs = cost_objects_by_uids()
+
+    objects = db.query(db.Request).filter_by(tripid=tripid, state=db.RequestState.to_purchase).all()
+
+    rows = [
+        [
+            get_by_id(aisles, i.itemid),
+            get_by_id(items, i.itemid),
+            render_quantity(i.quantity, i.unit),
+            i.substitution,
+            i.contact,
+            costs.get(i.costid, "#REF?"),
+            i.comments,
+        ] for i in objects
+    ]
+    rows.sort()
+    return simple_table("Shopping List for " + str(trip.date), ["Aisle", "Item Name", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Comments"], rows)
 
 @mode
 def debug(user, write_access, params):
