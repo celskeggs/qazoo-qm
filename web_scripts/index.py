@@ -83,6 +83,7 @@ def item_types_edit(user, write_access, params):
             ("text", "aisle.%d" % i.uid, "", i.aisle or ""),
         ] for i in objects if (tripid is None or i.uid in items)
     ]
+    rows.sort(key=lambda r: r[1])
     return editable_table("Edit Item Types", ["ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" if write_access else None))
 
 @mode
