@@ -659,6 +659,47 @@ def reservations_submit(user, write_access, params):
     }
 
 @mode
+def compare_inventory(user, write_access, params):
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+    edit = (param_as_str(params, "edit", "") == "true" and write_access)
+
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+
+    requests = db.query(db.Request).filter_by(tripid=tripid).all()
+    relevant_itemids = {r.itemid for r in requests if r.itemid is not None}
+    inventory = build_latest_inventory(db.Inventory.itemid.in_(relevant_itemids))
+
+    rows = [
+        [
+            ("",                                         "", "",                        get_by_id(items, i.itemid)         ),
+            ("",                                         "", "",                        render_quantity(i.quantity, i.unit)),
+            ("",                                         "", "",                        i.comments                         ),
+            ("",                                         "", "",                        ""                                 ),
+            ("dropdown",                 "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
+            ("",                                         "", "",                        str(i.updated_at)                  ),
+        ] for i in requests
+    ]
+    rows += [
+        [
+            ("",                                         "", "",                        items.get(i.uid, "#REF?")          ),
+            ("",                                         "", "",                        ""                                 ),
+            ("",                                         "", "",                        ""                                 ),
+            ("text",                  "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
+            ("",                                         "", "",                        "INVENTORY"                        ),
+            ("",                                         "", "",                        str(i.measurement)                 ),
+        ] for i in inventory
+    ]
+    rows.sort()
+    action = "?mode=debug&trip=%d" % trip.uid
+    return editable_table("Inventory Comparison for " + str(trip.date), ["Item Name", "Requested Quantity", "Comments", "Available Quantity", "State", "Updated At"], rows, action=action)
+
+@mode
 def debug(user, write_access, params):
     return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([(k, sorted(v) if type(v) == list else v) for k, v in params.items()]))
 
