@@ -568,13 +568,13 @@ def reservation_preparation(user, write_access, params):
 
     rows = [(
         ("", "", "", items[i.itemid]),
-        ("dropdown", "location.%d" % i.itemid, sorted(locations.items()), likely_locations.get(i.itemid,"")),
+        ("dropdown", "location.%d" % i.itemid, [("", "")] + sorted(locations.items()), likely_locations.get(i.itemid,"")),
         ("", "", "", render_quantity(i.quantity, i.unit)),
         ("", "", "", i.coop_date),
     ) for i in requests]
     rows.sort()
 
-    instructions = "Found %d reservations for submission" % len(requests)
+    instructions = "Found %d reservations for submission; possible_locations = %s; likely_locations = %s" % (len(requests), repr(possible_locations), repr(likely_locations))
 
     return editable_table("Inventory Incremental Review", ["Item", "Location", "Quantity", "Date"], rows, action="?mode=reservations_submit&trip=%d" % trip.uid, instructions=instructions)
 
