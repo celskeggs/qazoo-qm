@@ -564,7 +564,7 @@ def reservation_preparation(user, write_access, params):
     locations = locations_by_uids()
     items = item_names_by_uids()
 
-    likely_locations = {itemid: locations[list(s)[0]] for itemid, s in possible_locations.items() if len(s) == 1 and list(s)[0] in locations}
+    likely_locations = {itemid: list(s)[0] for itemid, s in possible_locations.items() if len(s) == 1 and list(s)[0] in locations}
 
     rows = [(
         ("", "", "", items[i.itemid]),
@@ -574,7 +574,7 @@ def reservation_preparation(user, write_access, params):
     ) for i in requests]
     rows.sort()
 
-    instructions = "Found %d reservations for submission; possible_locations = %s; likely_locations = %s" % (len(requests), repr(possible_locations), repr(likely_locations))
+    instructions = "Found %d reservations for submission; possible_locations = %s; likely_locations = %s; itemids = %s" % (len(requests), repr(possible_locations), repr(likely_locations), repr([i.itemid for i in requests]))
 
     return editable_table("Inventory Incremental Review", ["Item", "Location", "Quantity", "Date"], rows, action="?mode=reservations_submit&trip=%d" % trip.uid, instructions=instructions)
 
