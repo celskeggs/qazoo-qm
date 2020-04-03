@@ -832,7 +832,7 @@ def add_transaction(user, write_access, params):
     allowable_cost_ids = cost_objects_by_uids().keys()
 
     trip_id = int_or_none(params, "trip_id")
-    if get_shopping_trip(trip_id) is None:
+    if trip_id is not None and get_shopping_trip(trip_id) is None:
         return {"template": "error.html", "message": "invalid trip ID"}
 
     request_id = int_or_none(params, "request_id")
