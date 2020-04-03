@@ -858,7 +858,7 @@ def add_transaction(user, write_access, params):
         return {"template": "error.html", "message": "no valid description found"}
 
     try:
-        amount = round(float(params.get("amount", "0"), 2)
+        amount = round(float(params.get("amount", "0"), 2))
     except ValueError:
         return {"template": "error.html", "message": "no valid number found for amount"}
     if amount <= 0:
