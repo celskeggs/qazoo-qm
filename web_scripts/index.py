@@ -779,7 +779,12 @@ def review_balances(user, write_access, params):
         balances[transaction.debit_id] += transaction.amount
         balances[transaction.credit_id] -= transaction.amount
 
-    rows = build_table(objects, "description", "venmo", lambda i: "$%.2f" % balances[i.uid])
+    rows = build_table(
+        objects,
+        "description",
+        "venmo",
+        lambda i: "$%.2f" % balances[i.uid],
+    )
     return simple_table("Balances", ["Cost Object", "Venmo", "Amount Owed"], rows)
 
 @mode
@@ -799,6 +804,7 @@ def review_transactions(user, write_access, params):
         "uid",
         lambda i: costs.get(i.credit_id, "#REF?"),
         lambda i: costs.get(i.debit_id, "#REF?"),
+        lambda i: "$%.2f" % i.amount,
         lambda i: get_by_id(date_by_trip, i.trip_id),
         lambda i: i.request_id or "",
         lambda i: get_by_id(formal_names, i.request_id),
@@ -858,7 +864,7 @@ def add_transaction(user, write_access, params):
         return {"template": "error.html", "message": "no valid description found"}
 
     try:
-        amount = round(float(params.get("amount", "0"), 2))
+        amount = round(float(params.get("amount", "0")), 2)
     except ValueError:
         return {"template": "error.html", "message": "no valid number found for amount"}
     if amount <= 0:
