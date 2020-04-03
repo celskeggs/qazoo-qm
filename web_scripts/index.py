@@ -895,7 +895,7 @@ def personal_transactions(user, write_access, params):
         return {"template": "error.html", "message": "more than one cost object found for user"}
     user_id = user_uids[0]
 
-    transactions = db.query(db.Transaction).filter(sqlalchemy.or_(db.Transaction.credit_id == user_id, db.Transaction.debit_id == user_id)).all()
+    transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == user_id, db.Transaction.debit_id == user_id)).all()
     date_by_trip = {st.uid: st.date for st in db.query(db.ShoppingTrip).all()}
     requests = db.query(db.Request).all()
     formal_names = {req.uid: items[req.itemid] for req in requests if req.itemid is not None}
