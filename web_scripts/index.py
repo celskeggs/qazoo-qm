@@ -13,6 +13,7 @@ import urlparse
 from collections import namedtuple
 
 QM = "cela"
+QM_VENMO = "@celskeggs"
 
 jenv = jinja2.Environment(loader=jinja2.FileSystemLoader("templates"), autoescape=True, trim_blocks=True, lstrip_blocks=True)
 
@@ -881,6 +882,44 @@ def add_transaction(user, write_access, params):
     db.add(new_transaction)
 
     return review_transactions(user, write_access, params)
+
+@mode
+def personal_transactions(user, write_access, params):
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+
+    user_uids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=user).all()]
+    if not user_ids:
+        return {"template": "error.html", "message": "no cost object found for user"}
+    if len(user_ids) != 1:
+        return {"template": "error.html", "message": "more than one cost object found for user"}
+    user_id = user_uids[0]
+
+    transactions = db.query(db.Transaction).filter(sqlalchemy.or_(db.Transaction.credit_id == user_id, db.Transaction.debit_id == user_id)).all()
+    date_by_trip = {st.uid: st.date for st in db.query(db.ShoppingTrip).all()}
+    requests = db.query(db.Request).all()
+    formal_names = {req.uid: items[req.itemid] for req in requests if req.itemid is not None}
+    total = sum(i.amount if i.debit_id == user_id else -i.amount for i in transactions)
+
+    rows = build_table(
+        transactions,
+        "uid",
+        lambda i: (costs.get(i.credit_id, "#REF?") if i.debit_id == user_id else costs.get(i.debit_id, "#REF?")),
+        lambda i: "$%.2f" % (i.amount if i.debit_id == user_id else -i.amount),
+        lambda i: get_by_id(date_by_trip, i.trip_id),
+        lambda i: i.request_id or "",
+        lambda i: get_by_id(formal_names, i.request_id),
+        "description",
+        "added_at",
+    )
+    if total > 0:
+        rows += [("", "Owed BY you:", "$%.2f" % total, "", "", "", "", "")]
+    else:
+        rows += [("", "Owed TO you:", "$%.2f" % total, "", "", "", "", "")]
+
+    instructions = "If you have an outstanding balance, please send it via Venmo to %s." % QM_VENMO
+
+    return simple_table("Personal Transactions for " + user, ["ID", "Account", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, instructions=instructions)
 
 @mode
 def debug(user, write_access, params):
