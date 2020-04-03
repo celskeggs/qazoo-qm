@@ -769,9 +769,6 @@ def shopping_list(user, write_access, params):
 
 @mode
 def review_balances(user, write_access, params):
-    if not write_access:
-        return {"template": "error.html", "message": "no QM access"}
-
     objects = db.query(db.CostObject).all()
     transactions = db.query(db.Transaction).all()
 
@@ -790,9 +787,6 @@ def review_balances(user, write_access, params):
 
 @mode
 def review_transactions(user, write_access, params):
-    if not write_access:
-        return {"template": "error.html", "message": "no QM access"}
-
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     transactions = db.query(db.Transaction).all()
@@ -817,19 +811,22 @@ def review_transactions(user, write_access, params):
     cost_objects = sorted(costs.items())
     trips_dropdown = [("", "")] + sorted(date_by_trip.items())
 
-    creation = [
-        ("",                  "", "",             ""   ),
-        ("dropdown", "credit_id", cost_objects,   ""   ),
-        ("dropdown",  "debit_id", cost_objects,   ""   ),
-        ("text",        "amount", "",             ""   ),
-        ("dropdown",   "trip_id", trips_dropdown, ""   ),
-        ("text",    "request_id", "",             ""   ),
-        ("",                  "", "",             ""   ),
-        ("text",   "description", "",             ""   ),
-        ("",                  "", "",             "now"),
-    ]
+    if write_access:
+        creation = [
+            ("",                  "", "",             ""   ),
+            ("dropdown", "credit_id", cost_objects,   ""   ),
+            ("dropdown",  "debit_id", cost_objects,   ""   ),
+            ("text",        "amount", "",             ""   ),
+            ("dropdown",   "trip_id", trips_dropdown, ""   ),
+            ("text",    "request_id", "",             ""   ),
+            ("",                  "", "",             ""   ),
+            ("text",   "description", "",             ""   ),
+            ("",                  "", "",             "now"),
+        ]
+    else:
+        creation = []
 
-    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action="?mode=add_transaction")
+    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action=("?mode=add_transaction" if write_access else None))
 
 @mode
 def add_transaction(user, write_access, params):
