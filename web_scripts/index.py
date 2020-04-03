@@ -822,7 +822,59 @@ def review_transactions(user, write_access, params):
         ("",                  "", "",             "now"),
     ]
 
-    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action="?mode=debug")
+    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action="?mode=add_transaction")
+
+@mode
+def add_transaction(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    allowable_cost_ids = cost_objects_by_uids().keys()
+
+    trip_id = int_or_none(params, "trip_id")
+    if get_shopping_trip(trip_id) is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+
+    request_id = int_or_none(params, "request_id")
+    if request_id is not None:
+        found = db.query(db.Request).filter_by(uid=request_id).all()
+        if not found:
+            return {"template": "error.html", "message": "invalid request ID"}
+        if len(found) > 1:
+            return {"template": "error.html", "message": "unexpected multiple requests"}
+        if found[0].tripid != trip_id:
+            return {"template": "error.html", "message": "request did not match specified trip"}
+
+    credit_id, debit_id = int_or_none(params, "credit_id"), int_or_none(params, "debit_id")
+    if not credit_id or not debit_id:
+        return {"template": "error.html", "message": "no cost ID specified"}
+    if credit_id not in allowable_cost_ids or debit_id not in allowable_cost_ids:
+        return {"template": "error.html", "message": "attempt to submit under invalid cost ID"}
+    if credit_id == debit_id:
+        return {"template": "error.html", "message": "attempt to submit with debit ID = credit ID"}
+
+    description = params.get("description").strip()
+    if not description:
+        return {"template": "error.html", "message": "no valid description found"}
+
+    try:
+        amount = round(float(params.get("amount", "0"), 2)
+    except ValueError:
+        return {"template": "error.html", "message": "no valid number found for amount"}
+    if amount <= 0:
+        return {"template": "error.html", "message": "amount was invalid, zero, or negative"}
+
+    new_transaction = db.Transaction(
+        credit_id = credit_id,
+        debit_id = debit_id,
+        amount = amount,
+        trip_id = trip_id,
+        request_id = request_id,
+        description = description,
+    )
+    db.add(new_transaction)
+
+    return review_transactions(user, write_access, params)
 
 @mode
 def debug(user, write_access, params):
