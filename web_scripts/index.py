@@ -767,6 +767,63 @@ def shopping_list(user, write_access, params):
     return editable_table("Shopping List for " + str(trip.date), ["", "Aisle", "Item Name", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Comments"], rows)
 
 @mode
+def review_balances(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    objects = db.query(db.CostObject).all()
+    transactions = db.query(db.Transaction).all()
+
+    balances = {c.uid: 0 for c in objects}
+    for transaction in transactions:
+        balances[transaction.debit_id] += transaction.amount
+        balances[transaction.credit_id] -= transaction.amount
+
+    rows = build_table(objects, "description", "venmo", lambda i: "$%.2f" % balances[i.uid])
+    return simple_table("Balances", ["Cost Object", "Venmo", "Amount Owed"], rows)
+
+@mode
+def review_transactions(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+    transactions = db.query(db.Transaction).all()
+    date_by_trip = {st.uid: st.date for st in db.query(db.ShoppingTrip).all()}
+    requests = db.query(Requests).all()
+    formal_names = {req.uid: items[req.itemid] for req in requests}
+
+    rows = build_table(
+        objects,
+        "uid",
+        lambda i: costs.get(i.credit_id, "#REF?"),
+        lambda i: costs.get(i.debit_id, "#REF?"),
+        lambda i: get_by_id(date_by_trip, i.trip_id),
+        lambda i: i.request_id or "",
+        lambda i: get_by_id(formal_names, i.request_id),
+        "description",
+        "added_at",
+    )
+    rows = [[("", "", "", cell) for ci, cell in enumerate(row)] for row in rows]
+
+    cost_objects = sorted(costs.items())
+    trips_dropdown = sorted(date_by_trip.items())
+
+    creation = [
+        ("",                  "", "",             ""   ),
+        ("dropdown", "credit_id", cost_objects,   ""   ),
+        ("dropdown",  "debit_id", cost_objects,   ""   ),
+        ("dropdown",   "trip_id", trips_dropdown, ""   ),
+        ("text",    "request_id", "",             ""   ),
+        ("",                  "", "",             ""   ),
+        ("text",   "description", "",             ""   ),
+        ("",                  "", "",             "now"),
+    ]
+
+    return editable_table("Transactions", ["ID", "Credit", "Debit", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action="?mode=debug")
+
+@mode
 def debug(user, write_access, params):
     return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([(k, sorted(v) if type(v) == list else v) for k, v in params.items()]))
 

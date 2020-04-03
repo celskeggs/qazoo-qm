@@ -111,6 +111,17 @@ class Reservation(SQLBase):
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
     unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
 
+class Transaction(SQlBase):
+    __tablename__ = "transaction"
+    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
+    credit_id = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
+    debit_id = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
+    amount = sqlalchemy.Column(sqlalchemy.DECIMAL(6, 2), nullable=False)
+    trip_id = qslalchemy.Column(sqlalchemy.Integer(), nullable=True)
+    request_id = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
+    description = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
+    added_at = sqlalchemy.Colunm(sqlalchemy.TIMESTAMP(), nullable=False)
+
 #class ShoppingIntention(SQLBase):
 #    __tablename__ == "shopping_intention"
 #    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
