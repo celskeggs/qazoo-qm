@@ -889,9 +889,9 @@ def personal_transactions(user, write_access, params):
     costs = cost_objects_by_uids()
 
     user_uids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=user).all()]
-    if not user_ids:
+    if not user_uids:
         return {"template": "error.html", "message": "no cost object found for user"}
-    if len(user_ids) != 1:
+    if len(user_uids) != 1:
         return {"template": "error.html", "message": "more than one cost object found for user"}
     user_id = user_uids[0]
 
