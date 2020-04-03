@@ -791,11 +791,11 @@ def review_transactions(user, write_access, params):
     costs = cost_objects_by_uids()
     transactions = db.query(db.Transaction).all()
     date_by_trip = {st.uid: st.date for st in db.query(db.ShoppingTrip).all()}
-    requests = db.query(Requests).all()
-    formal_names = {req.uid: items[req.itemid] for req in requests}
+    requests = db.query(db.Request).all()
+    formal_names = {req.uid: items[req.itemid] for req in requests if req.itemid is not None}
 
     rows = build_table(
-        objects,
+        transactions,
         "uid",
         lambda i: costs.get(i.credit_id, "#REF?"),
         lambda i: costs.get(i.debit_id, "#REF?"),
@@ -808,12 +808,13 @@ def review_transactions(user, write_access, params):
     rows = [[("", "", "", cell) for ci, cell in enumerate(row)] for row in rows]
 
     cost_objects = sorted(costs.items())
-    trips_dropdown = sorted(date_by_trip.items())
+    trips_dropdown = [("", "")] + sorted(date_by_trip.items())
 
     creation = [
         ("",                  "", "",             ""   ),
         ("dropdown", "credit_id", cost_objects,   ""   ),
         ("dropdown",  "debit_id", cost_objects,   ""   ),
+        ("text",        "amount", "",             ""   ),
         ("dropdown",   "trip_id", trips_dropdown, ""   ),
         ("text",    "request_id", "",             ""   ),
         ("",                  "", "",             ""   ),
@@ -821,7 +822,7 @@ def review_transactions(user, write_access, params):
         ("",                  "", "",             "now"),
     ]
 
-    return editable_table("Transactions", ["ID", "Credit", "Debit", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action="?mode=debug")
+    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action="?mode=debug")
 
 @mode
 def debug(user, write_access, params):
