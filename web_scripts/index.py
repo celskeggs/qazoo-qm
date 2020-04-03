@@ -918,7 +918,7 @@ def personal_transactions(user, write_access, params):
     if total > 0:
         rows += [("", "Owed BY you:", "$%.2f" % total, "", "", "", "", "")]
     else:
-        rows += [("", "Owed TO you:", "$%.2f" % total, "", "", "", "", "")]
+        rows += [("", "Owed TO you:", "$%.2f" % -total, "", "", "", "", "")]
 
     instructions = "If you have an outstanding balance, please send it via Venmo to %s." % QM_VENMO
 
