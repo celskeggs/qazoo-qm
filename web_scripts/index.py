@@ -78,11 +78,11 @@ def item_types_edit(user, write_access, params):
     objects = db.query(db.ItemType).all()
     rows = [
         [
-            ("checkbox",      "edit.%d", "", False),
-            ("",                     "", "", i.uid),
-            ("",                     "", "", i.name),
-            ("",                     "", "", i.standard_unit),
-            ("text", "aisle.%d" % i.uid, "", i.aisle or ""),
+            ("checkbox", "edit.%d" % i.uid, "", False),
+            ("",                        "", "", i.uid),
+            ("",                        "", "", i.name),
+            ("",                        "", "", i.standard_unit),
+            ("text",    "aisle.%d" % i.uid, "", i.aisle or ""),
         ] for i in objects if (tripid is None or i.uid in items)
     ]
     rows.sort(key=lambda r: r[1])
