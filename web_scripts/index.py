@@ -262,6 +262,8 @@ def requests(user, write_access, params):
             ] for i in objects
         ]
         action = "?mode=request_modify&trip=%d" % trip.uid
+        if "state" in params:
+            action += "&state_view=%s" % params["state"]
     instructions = {
         "template": "reviewlist.html",
         "can_edit": write_access,
@@ -483,7 +485,10 @@ def request_modify(user, write_access, params):
     res = handle_request_updates(user, write_access, params, trip, require_edit=True)
     if res is not None:
         return res
-    return requests(user, write_access, {"trip": params["trip"], "edit": "true"})
+    nparams = {"trip": params["trip"], "edit": "true"}
+    if "state_view" in params:
+        nparams["state"] = params["state_view"]
+    return requests(user, write_access, nparams)
 
 def build_latest_inventory(*filter_queries):
     inventory = db.query(db.Inventory).filter(*filter_queries).order_by(db.Inventory.measurement).all()

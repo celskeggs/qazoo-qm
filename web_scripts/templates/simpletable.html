@@ -16,7 +16,9 @@
         var inputs = e.target.parentElement.parentElement.getElementsByTagName("input");
         for (var i = 0; i < inputs.length; i++) {
             if (inputs[i].type == "checkbox") {
-                inputs[i].checked = true;
+                if (inputs[i] != e.target) {
+                    inputs[i].checked = true;
+                }
                 break;
             }
         }
