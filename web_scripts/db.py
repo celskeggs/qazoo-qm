@@ -48,7 +48,9 @@ class RequestState:
     deduplicated = "deduplicated"
     retracted = "retracted"
     rejected = "rejected"
-    VALUES = [draft, submitted, accepted, to_purchase, to_reserve, deduplicated, retracted, rejected]
+    purchased = "purchased"
+    unavailable = "unavailable"
+    VALUES = [draft, submitted, accepted, to_purchase, to_reserve, deduplicated, retracted, rejected, purchased, unavailable]
     # allowable new states by "old state" and then "is QM"
     ALLOWABLE = {
         draft: [
@@ -65,7 +67,7 @@ class RequestState:
         ],
         to_purchase: [
             [],
-            [rejected, accepted, to_reserve, deduplicated],
+            [rejected, accepted, to_reserve, deduplicated, unavailable, purchased],
         ],
         to_reserve: [
             [],
@@ -82,6 +84,14 @@ class RequestState:
         rejected: [
             [],
             [draft, submitted],
+        ],
+        unavailable: [
+            [],
+            [purchased, to_purchase],
+        ],
+        purchased: [
+            [],
+            [unavailable, to_purchase],
         ],
     }
 

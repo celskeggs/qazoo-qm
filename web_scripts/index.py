@@ -212,6 +212,11 @@ def requests(user, write_access, params):
     cost_objects = sorted(costs.items())
 
     objects = db.query(db.Request).filter_by(tripid=tripid).order_by(db.Request.submitted_at).all()
+    if "state" in params:
+        expected_state = params["state"]
+        if expected_state not in db.RequestState.VALUES:
+            return {"template": "error.html", "message": "unrecognized state %s" % expected_state}
+        objects = [o for o in objects if o.state == expected_state]
 
     optionsets = {
         "formal_options": formal_options,
