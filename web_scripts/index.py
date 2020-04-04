@@ -39,12 +39,12 @@ def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
     rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
     return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
-def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None):
+def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False):
     if instructions is None:
         instructions = ""
     elif type(instructions) is dict:
         instructions = jinja2.Markup(render(instructions))
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None}
+    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None, "onedit": onedit}
 
 @mode
 def cost(user, write_access, params):
@@ -273,7 +273,7 @@ def requests(user, write_access, params):
         "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
         "count": len(objects),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets)
+    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]

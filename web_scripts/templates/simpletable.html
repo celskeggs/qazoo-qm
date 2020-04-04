@@ -9,9 +9,21 @@
     td { padding: 5px; }
     .header td { border: 2px solid black; }
     </style>
-    {% if optionsets %}
+    {% if optionsets or onedit %}
     <script>
+    {% if onedit %}
+    function on_edit(e) {
+        var inputs = e.parentElement.parentElement.getElementsByTagName("input");
+        for (var i = 0; i < inputs.length; i++) {
+            if (i.type == "checkbox") {
+                i.checked = !i.checked;
+                break;
+            }
+        }
+    }
+    {% endif %}
     window.onload = function() {
+    {% if optionsets %}
         var optionsets = {{ optionsets|safe }};
         var selects = document.getElementsByTagName("select");
         for (var i = 0; i < selects.length; i++) {
@@ -30,6 +42,17 @@
                 }
             }
         }
+    {% endif %}
+    {% if onedit %}
+        var inputs = document.getElementsByTagName("input");
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener('input', on_edit);
+        }
+        var selects = document.getElementsByTagName("select");
+        for (var i = 0; i < selects.length; i++) {
+            selects[i].addEventListener('input', on_edit);
+        }
+    {% endif %}
     };
     </script>
     {% endif %}
