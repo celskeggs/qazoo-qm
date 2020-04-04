@@ -565,12 +565,20 @@ def purchase_retirement_list(user, write_access, params):
     trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
 
     updated_at = {}
+    conflicting = set()
     for i in inventory:
+        if i.itemid in updated_at:
+            conflicting.add(i.itemid)
         if i.itemid not in updated_at or i.measurement < updated_at[i.itemid]:
             updated_at[i.itemid] = i.measurement
 
     unretired_requests = [r for r in requests if r.itemid not in updated_at or trip_dates[r.tripid] > updated_at[r.itemid]]
-    relevant_itemids = {r.itemid for r in unretired_requests}
+    requests_by_itemid = {}
+    for r in unretired_requests:
+        if r.itemid not in requests_by_itemid:
+            requests_by_itemid[r.itemid] = []
+        requests_by_itemid[r.itemid].append(r)
+    relevant_itemids = set(requests_by_itemid.keys())
     relevant_inventory = [i for i in inventory if i.itemid in relevant_itemids]
 
     locations = locations_by_uids()
@@ -586,14 +594,28 @@ def purchase_retirement_list(user, write_access, params):
         ("checkbox", "retire.%d" % r.uid, "", ""                                 ),
     ] for r in unretired_requests]
 
+    guessed_quantities = {}
+    for i in inventory:
+        if i.itemid in relevant_itemids and i.itemid not in conflicting:
+            unit = i.unit
+            quantity = i.quantity
+            okay = True
+            for r in requests_by_itemid[i.itemid]:
+                if r.unit != unit:
+                    okay = False
+                    break
+                quantity += r.quantity
+            if okay:
+                guessed_quantities[i.itemid] = render_quantity(quantity, unit)
+
     rows += [[
         ("",                                              "", "", ""                                 ),
         ("",                                              "", "", items[i.itemid]                    ),
         ("",                                              "", "", ""                                 ),
         ("",                                              "", "", locations[i.locationid]            ),
         ("",                                              "", "", render_quantity(i.quantity, i.unit)),
-        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", ""                                 ),
-        ("",                                              "", "", ""                                 ),
+        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", guessed_quantites.get(i.itemid, "")),
+        ("checkbox", "done.%d.%d" % (i.itemid, i.locationid), "", ""                                 ),
     ] for i in relevant_inventory]
 
     rows.sort(key=lambda row: (row[1], row[0], row[3]))
