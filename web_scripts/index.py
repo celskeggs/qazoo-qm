@@ -86,7 +86,15 @@ def item_types_edit(user, write_access, params):
         ] for i in objects if (tripid is None or i.uid in items)
     ]
     rows.sort(key=lambda r: r[1])
-    return editable_table("Edit Item Types", ["Edit?", "ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" + ("&trip=%d" % tripid if tripid is not None else "") if write_access else None), onedit=True)
+    creation = [
+        ("",                "", "", ""),
+        ("",                "", "", i.uid),
+        ("text",    "name.new", "", i.name),
+        ("text",    "unit.new", "", i.standard_unit),
+        ("text",   "aisle.new", "", i.aisle or ""),
+    ]
+
+    return editable_table("Edit Item Types", ["Edit?", "ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" + ("&trip=%d" % tripid if tripid is not None else "") if write_access else None), onedit=True, creation=(creation if write_access else None))
 
 @mode
 def item_types_update(user, write_access, params):
@@ -105,7 +113,14 @@ def item_types_update(user, write_access, params):
         t = lookup[uid]
         t.aisle = params.get("aisle.%d" % uid)
         count += 1
-    if count:
+    if params.get("name.new"):
+        new_itemtype = db.ItemType(
+            name = params["name.new"],
+            standard_unit = params.get("unit.new"),
+            aisle = params.get("aisle.new"),
+        )
+        db.add(new_itemtype)
+    elif count:
         db.commit()
     return item_types_edit(user, write_access, params)
 
