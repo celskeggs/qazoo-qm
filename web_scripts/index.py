@@ -88,10 +88,10 @@ def item_types_edit(user, write_access, params):
     rows.sort(key=lambda r: r[1])
     creation = [
         ("",                "", "", ""),
-        ("",                "", "", i.uid),
-        ("text",    "name.new", "", i.name),
-        ("text",    "unit.new", "", i.standard_unit),
-        ("text",   "aisle.new", "", i.aisle or ""),
+        ("",                "", "", ""),
+        ("text",    "name.new", "", ""),
+        ("text",    "unit.new", "", ""),
+        ("text",   "aisle.new", "", ""),
     ]
 
     return editable_table("Edit Item Types", ["Edit?", "ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" + ("&trip=%d" % tripid if tripid is not None else "") if write_access else None), onedit=True, creation=(creation if write_access else None))
