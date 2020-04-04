@@ -13,10 +13,10 @@
     <script>
     {% if onedit %}
     function on_edit(e) {
-        var inputs = e.parentElement.parentElement.getElementsByTagName("input");
+        var inputs = e.target.parentElement.parentElement.getElementsByTagName("input");
         for (var i = 0; i < inputs.length; i++) {
-            if (i.type == "checkbox") {
-                i.checked = !i.checked;
+            if (inputs[i].type == "checkbox") {
+                inputs[i].checked = true;
                 break;
             }
         }
