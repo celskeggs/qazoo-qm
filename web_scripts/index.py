@@ -527,8 +527,8 @@ def inventory_review_list(user, write_access, params):
     if trip is None:
         return {"template": "error.html", "message": "unrecognized trip ID"}
 
-    valid_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
-    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected]), db.Request.costid.in_(valid_costids)).all()
+    communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected]), db.Request.costid.in_(communal_costids)).all()
     relevant_itemids = {r.itemid for r in requests}
     inventory = build_latest_inventory(db.Inventory.itemid.in_(relevant_itemids))
 
@@ -556,6 +556,51 @@ def inventory_review_list(user, write_access, params):
     instructions = "Found %d items for inventory" % count
 
     return editable_table("Inventory Incremental Review", ["Up-to-date?", "Location", "Item", "Inventory Quantity", "New Quantity", "Last Inventoried", "Request IDs"], rows, action=("?mode=inventory_update&trip=%d" % trip.uid if write_access else None), instructions=instructions)
+
+@mode
+def purchase_retirement_list(user, write_access, params):
+    communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.state == db.RequestState.purchased, db.Request.costid.in_(communal_costids)).all()
+    inventory = build_latest_inventory()
+    trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
+
+    updated_at = {}
+    for i in inventory:
+        if i.itemid not in updated_at or i.measurement < updated_at[i.itemid]:
+            updated_at[i.itemid] = i.measurement
+
+    unretired_requests = [r for r in requests if r.itemid not in updated_at or trip_dates[r.tripid] > updated_at[r.itemid]]
+    relevant_itemids = {r.itemid for r in unretired_requests}
+    relevant_inventory = [i for i in inventory if i.itemid in relevant_itemids]
+
+    locations = locations_by_uids()
+    items = item_names_by_uids()
+
+    rows = [[
+        ("",                          "", "", r.uid                              ),
+        ("",                          "", "", items[r.itemid]                    ),
+        ("",                          "", "", render_quantity(r.quantity, r.unit)),
+        ("",                          "", "", ""                                 ),
+        ("",                          "", "", ""                                 ),
+        ("",                          "", "", ""                                 ),
+        ("checkbox", "retire.%d" % r.uid, "", ""                                 ),
+    ] for r in unretired_requests]
+
+    rows += [[
+        ("",                                              "", "", ""                                 ),
+        ("",                                              "", "", items[i.itemid]                    ),
+        ("",                                              "", "", ""                                 ),
+        ("",                                              "", "", locations[i.locationid]            ),
+        ("",                                              "", "", render_quantity(i.quantity, i.unit)),
+        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", ""                                 ),
+        ("",                                              "", "", ""                                 ),
+    ] for i in relevant_inventory]
+
+    rows.sort(key=lambda row: (row[1], row[0], row[3]))
+
+    instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually!"
+
+    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Inventory Location", "Last Quantity", "New Quantity", "Done?"], rows, action=("?mode=debug" if write_access else None), instructions=instructions)
 
 @mode
 def inventory_update(user, write_access, params):
