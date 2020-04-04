@@ -200,9 +200,9 @@ def inventory(user, write_access, params):
     items = item_names_by_uids()
     locations = locations_by_uids()
     objects = build_latest_inventory()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: render_quantity(i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement")
+    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: render_quantity(i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement", "full_inventory")
     rows.sort(key=lambda row: (row[0], row[2]))
-    return simple_table("Inventory", ["Name", "Quantity", "Location", "Last Inventoried At"], rows, instructions="Number of inventory entries: %d" % len(rows))
+    return simple_table("Inventory", ["Name", "Quantity", "Location", "Last Updated At", "Full re-inventory?"], rows, instructions="Number of inventory entries: %d" % len(rows))
 
 @mode
 def trips(user, write_access, params):
@@ -595,6 +595,7 @@ def inventory_update(user, write_access, params):
                 unit=unit,
                 locationid=locationid,
                 measurement=today,
+                full_inventory=True,
             )
             db.add_no_commit(update)
             any_updates = True

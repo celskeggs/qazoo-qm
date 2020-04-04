@@ -25,6 +25,7 @@ class Inventory(SQLBase):
     unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
     locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
     measurement = sqlalchemy.Column(sqlalchemy.Date(), nullable=False)
+    full_inventory = sqlalchemy.Column(sqlalchemy.Boolean(), nullable=False)
 
 class CostObject(SQLBase):
     __tablename__ = "cost_object"
