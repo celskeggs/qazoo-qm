@@ -609,13 +609,13 @@ def purchase_retirement_list(user, write_access, params):
                 guessed_quantities[i.itemid] = render_quantity(quantity, unit)
 
     rows += [[
-        ("",                                              "", "", ""                                 ),
-        ("",                                              "", "", items[i.itemid]                    ),
-        ("",                                              "", "", ""                                 ),
-        ("",                                              "", "", locations[i.locationid]            ),
-        ("",                                              "", "", render_quantity(i.quantity, i.unit)),
-        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", guessed_quantites.get(i.itemid, "")),
-        ("checkbox", "done.%d.%d" % (i.itemid, i.locationid), "", ""                                 ),
+        ("",                                              "", "", ""                                  ),
+        ("",                                              "", "", items[i.itemid]                     ),
+        ("",                                              "", "", ""                                  ),
+        ("",                                              "", "", locations[i.locationid]             ),
+        ("",                                              "", "", render_quantity(i.quantity, i.unit) ),
+        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", guessed_quantities.get(i.itemid, "")),
+        ("checkbox", "done.%d.%d" % (i.itemid, i.locationid), "", ""                                  ),
     ] for i in relevant_inventory]
 
     rows.sort(key=lambda row: (row[1], row[0], row[3]))
