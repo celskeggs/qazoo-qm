@@ -78,14 +78,15 @@ def item_types_edit(user, write_access, params):
     objects = db.query(db.ItemType).all()
     rows = [
         [
-            ("", "", "", i.uid),
-            ("", "", "", i.name),
-            ("", "", "", i.standard_unit),
+            ("checkbox",      "edit.%d", "", False),
+            ("",                     "", "", i.uid),
+            ("",                     "", "", i.name),
+            ("",                     "", "", i.standard_unit),
             ("text", "aisle.%d" % i.uid, "", i.aisle or ""),
         ] for i in objects if (tripid is None or i.uid in items)
     ]
     rows.sort(key=lambda r: r[1])
-    return editable_table("Edit Item Types", ["ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" if write_access else None))
+    return editable_table("Edit Item Types", ["Edit?", "ID", "Name", "Standard Unit", "Aisle"], rows, instructions=("All item types" if tripid is None else "Item types for trip on %s" % trip.date), action=("?mode=item_types_update" if write_access else None), onedit=True)
 
 @mode
 def item_types_update(user, write_access, params):
@@ -95,15 +96,15 @@ def item_types_update(user, write_access, params):
     types = db.query(db.ItemType).all()
     lookup = {t.uid: t for t in types}
 
+    edited = {int(p[5:]) for p in params if p.startswith("edit.") and p[5:].isdigit() and params[p] == "on"}
+
     count = 0
-    for p in params:
-        if p.startswith("aisle.") and p[6:].isdigit():
-            uid = int(p[6:])
-            if uid not in lookup:
-                return {"template": "error.html", "message": "no such item type with UID %d" % uid}
-            t = lookup[uid]
-            t.aisle = params[p] if params[p] else None
-            count += 1
+    for uid in edited:
+        if uid not in lookup:
+            return {"template": "error.html", "message": "no such item type with UID %d" % uid}
+        t = lookup[uid]
+        t.aisle = params.get("aisle.%d" % uid)
+        count += 1
     if count:
         db.commit()
     return item_types_edit(user, write_access, params)
