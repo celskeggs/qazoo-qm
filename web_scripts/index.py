@@ -612,7 +612,7 @@ def purchase_retirement_list(user, write_access, params):
                 if i.itemid == itemid and (unit is None or unit == i.unit):
                     unit = i.unit
                     quantity += i.quantity
-            for r in requests_by_itemid[i.itemid]:
+            for r in requests_by_itemid[itemid]:
                 if unit is None or r.unit == unit:
                     unit = r.unit
                     quantity += r.quantity
@@ -620,9 +620,9 @@ def purchase_retirement_list(user, write_access, params):
                     okay = False
                 dates.add(trip_dates[r.tripid])
             if okay:
-                guessed_quantities[i.itemid] = render_quantity(quantity, unit)
+                guessed_quantities[itemid] = render_quantity(quantity, unit)
             if len(dates) == 1:
-                guessed_dates[i.itemid] = list(dates)[0]
+                guessed_dates[itemid] = list(dates)[0]
 
     # line pre-populated from previous information
     rows += [[
