@@ -584,6 +584,11 @@ def purchase_retirement_list(user, write_access, params):
     locations = locations_by_uids()
     items = item_names_by_uids()
 
+    optionsets = {
+        "locations": [("","")] + sorted(locations.items()),
+    }
+
+    # line to represent the request
     rows = [[
         ("",                          "", "", r.uid                              ),
         ("",                          "", "", items[r.itemid]                    ),
@@ -597,14 +602,19 @@ def purchase_retirement_list(user, write_access, params):
 
     guessed_quantities = {}
     guessed_dates = {}
-    for i in inventory:
-        if i.itemid in relevant_itemids and i.itemid not in conflicting:
-            unit = i.unit
-            quantity = i.quantity
+    for itemid in relevant_itemids:
+        if itemid not in conflicting:
+            unit = None
+            quantity = 0
             okay = True
             dates = set()
+            for i in relevant_inventory:
+                if i.itemid == itemid and (unit is None or unit == i.unit):
+                    unit = i.unit
+                    quantity += i.quantity
             for r in requests_by_itemid[i.itemid]:
-                if r.unit == unit:
+                if unit is None or r.unit == unit:
+                    unit = r.unit
                     quantity += r.quantity
                 else:
                     okay = False
@@ -614,6 +624,7 @@ def purchase_retirement_list(user, write_access, params):
             if len(dates) == 1:
                 guessed_dates[i.itemid] = list(dates)[0]
 
+    # line pre-populated from previous information
     rows += [[
         ("",                                              "", "", ""                                  ),
         ("",                                              "", "", items[i.itemid]                     ),
@@ -625,11 +636,23 @@ def purchase_retirement_list(user, write_access, params):
         ("checkbox", "done.%d.%d" % (i.itemid, i.locationid), "", ""                                  ),
     ] for i in relevant_inventory]
 
+    # line available to be populated in a new way
+    rows += [[
+        ("",                            "", "",          ""                                  ),
+        ("",                            "", "",          items[rid]                          ),
+        ("",                            "", "",          ""                                  ),
+        ("dropdown",   "location.%d" % rid, "locations", ""                                  ),
+        ("",                            "", "",          "none"                              ),
+        ("text",       "quantity.%d" % rid, "",          guessed_quantities.get(i.itemid, "")),
+        ("date",           "date.%d" % rid, "",          guessed_dates.get(i.itemid, "")     ),
+        ("checkbox",        "new.%d" % rid, "",          ""                                  ),
+    ] for rid in relevant_itemids]
+
     rows.sort(key=lambda row: (row[1], row[0], row[3]))
 
     instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually!"
 
-    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Inventory Location", "Last Quantity", "New Quantity", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions)
+    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Inventory Location", "Last Quantity", "New Quantity", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
 
 @mode
 def retire_purchase_submit(user, write_access, params):
@@ -666,6 +689,26 @@ def retire_purchase_submit(user, write_access, params):
                 return {"template": "error.html", "message": "could not find request from %s" % p}
             assert req.state == db.RequestState.purchased
             req.state = db.RequestState.unloaded
+            count += 1
+        elif parts[0] == "new" and len(parts) == 2 and parts[1].isdigit() and params[p] == "on":
+            itemid = int(parts[1])
+            locationid = params.get("location.%d" % itemid)
+            if locationid is None:
+                return {"template": "error.html", "message": "could not parse locationid"}
+            quantity, unit = parse_quantity(params.get("quantity.%d" % itemid))
+            if quantity is None:
+                return {"template": "error.html", "message": "could not parse quantity"}
+            date = params.get("date.%d" % itemid)
+            if date is None:
+                return {"template": "error.html", "message": "could not find date"}
+            db.add_no_commit(db.Inventory(
+                itemid = itemid,
+                locationid = locationid,
+                quantity = quantity,
+                unit = unit,
+                measurement = date,
+                full_inventory = False,
+            ))
             count += 1
 
     if count:
