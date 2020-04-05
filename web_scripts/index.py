@@ -670,6 +670,8 @@ def retire_purchase_submit(user, write_access, params):
     if count:
         db.commit()
 
+    return purchase_retirement_list(user, write_access, {})
+
 @mode
 def inventory_update(user, write_access, params):
     if not write_access:
