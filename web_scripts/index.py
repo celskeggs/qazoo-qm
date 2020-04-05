@@ -650,7 +650,7 @@ def purchase_retirement_list(user, write_access, params):
 
     rows.sort(key=lambda row: (row[1], row[0], row[3]))
 
-    instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually!"
+    instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually! Additionally, not all 'purchased' items are shown here necessarily; confirm that none are left after completing this form."
 
     return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Inventory Location", "Last Quantity", "New Quantity", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
 
