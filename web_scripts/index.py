@@ -72,7 +72,7 @@ def item_types_edit(user, write_access, params):
         if trip is None:
             return {"template": "error.html", "message": "unrecognized trip ID"}
 
-        requests = db.query(db.Request).filter_by(tripid=tripid).all()
+        requests = db.query(db.Request).filter(db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.rejected, db.RequestState.retracted])).all()
         items = {r.itemid for r in requests}
 
     objects = db.query(db.ItemType).all()
