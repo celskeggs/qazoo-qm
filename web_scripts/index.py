@@ -648,7 +648,7 @@ def retire_purchase_submit(user, write_access, params):
             quantity, unit = parse_quantity(params.get("quantity.%d.%d" % (itemid, locationid)))
             if quantity is None:
                 return {"template": "error.html", "message": "could not parse quantity"}
-            date = params.get("date.%d.%d")
+            date = params.get("date.%d.%d" % (itemid, locationid))
             if date is None:
                 return {"template": "error.html", "message": "could not find date"}
             db.add_no_commit(db.Inventory(
@@ -666,6 +666,7 @@ def retire_purchase_submit(user, write_access, params):
                 return {"template": "error.html", "message": "could not find request from %s" % p}
             assert req.state == db.RequestState.purchased
             req.state = db.RequestState.unloaded
+            count += 1
 
     if count:
         db.commit()
