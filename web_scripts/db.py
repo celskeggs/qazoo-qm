@@ -5,6 +5,8 @@ import sqlalchemy.orm
 
 SQLBase = sqlalchemy.ext.declarative.declarative_base()
 
+# TODO: use ORM relations
+
 class ItemType(SQLBase):
     __tablename__ = "item_type"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)

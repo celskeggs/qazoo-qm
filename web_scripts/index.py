@@ -636,6 +636,7 @@ def retire_purchase_submit(user, write_access, params):
     if not write_access:
         return {"template": "error.html", "message": "no QM access"}
 
+    communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
     requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.state == db.RequestState.purchased, db.Request.costid.in_(communal_costids)).all()
     requests_by_id = {r.uid: r for r in requests}
 
