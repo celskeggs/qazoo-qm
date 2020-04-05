@@ -875,7 +875,7 @@ def compare_inventory(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
 
-    requests = db.query(db.Request).filter_by(tripid=tripid).all()
+    requests = db.query(db.Request).filter(db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected])).all()
     relevant_itemids = {r.itemid for r in requests if r.itemid is not None}
     inventory = build_latest_inventory(db.Inventory.itemid.in_(relevant_itemids))
 
