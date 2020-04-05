@@ -643,8 +643,8 @@ def purchase_retirement_list(user, write_access, params):
         ("",                                    "", "",          ""                                  ),
         ("dropdown-optionset", "location.%d" % rid, "locations", ""                                  ),
         ("",                                    "", "",          "none"                              ),
-        ("text",               "quantity.%d" % rid, "",          guessed_quantities.get(i.itemid, "")),
-        ("date",                   "date.%d" % rid, "",          guessed_dates.get(i.itemid, "")     ),
+        ("text",               "quantity.%d" % rid, "",          guessed_quantities.get(rid, "")     ),
+        ("date",                   "date.%d" % rid, "",          guessed_dates.get(rid, "")          ),
         ("checkbox",                "new.%d" % rid, "",          ""                                  ),
     ] for rid in relevant_itemids]
 
