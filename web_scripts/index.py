@@ -660,7 +660,7 @@ def retire_purchase_submit(user, write_access, params):
             ))
             count += 1
         elif parts[0] == "retire" and len(parts) == 2 and parts[1].isdigit() and params[p] == "on":
-            req = requests_by_id.get(int(parts[1])))
+            req = requests_by_id.get(int(parts[1]))
             if req is None:
                 return {"template": "error.html", "message": "could not find request from %s" % p}
             assert req.state == db.RequestState.purchased
