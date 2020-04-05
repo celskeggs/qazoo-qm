@@ -638,14 +638,14 @@ def purchase_retirement_list(user, write_access, params):
 
     # line available to be populated in a new way
     rows += [[
-        ("",                            "", "",          ""                                  ),
-        ("",                            "", "",          items[rid]                          ),
-        ("",                            "", "",          ""                                  ),
-        ("dropdown",   "location.%d" % rid, "locations", ""                                  ),
-        ("",                            "", "",          "none"                              ),
-        ("text",       "quantity.%d" % rid, "",          guessed_quantities.get(i.itemid, "")),
-        ("date",           "date.%d" % rid, "",          guessed_dates.get(i.itemid, "")     ),
-        ("checkbox",        "new.%d" % rid, "",          ""                                  ),
+        ("",                                    "", "",          ""                                  ),
+        ("",                                    "", "",          items[rid]                          ),
+        ("",                                    "", "",          ""                                  ),
+        ("dropdown-optionset", "location.%d" % rid, "locations", ""                                  ),
+        ("",                                    "", "",          "none"                              ),
+        ("text",               "quantity.%d" % rid, "",          guessed_quantities.get(i.itemid, "")),
+        ("date",                   "date.%d" % rid, "",          guessed_dates.get(i.itemid, "")     ),
+        ("checkbox",                "new.%d" % rid, "",          ""                                  ),
     ] for rid in relevant_itemids]
 
     rows.sort(key=lambda row: (row[1], row[0], row[3]))
