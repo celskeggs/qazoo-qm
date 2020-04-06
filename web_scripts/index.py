@@ -593,6 +593,7 @@ def purchase_retirement_list(user, write_access, params):
         ("",                          "", "", r.uid                              ),
         ("",                          "", "", items[r.itemid]                    ),
         ("",                          "", "", render_quantity(r.quantity, r.unit)),
+        ("",                          "", "", r.comments                         ),
         ("",                          "", "", ""                                 ),
         ("",                          "", "", ""                                 ),
         ("",                          "", "", ""                                 ),
@@ -629,6 +630,7 @@ def purchase_retirement_list(user, write_access, params):
         ("",                                              "", "", ""                                  ),
         ("",                                              "", "", items[i.itemid]                     ),
         ("",                                              "", "", ""                                  ),
+        ("",                                              "", "", ""                                  ),
         ("",                                              "", "", locations[i.locationid]             ),
         ("",                                              "", "", render_quantity(i.quantity, i.unit) ),
         ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", guessed_quantities.get(i.itemid, "")),
@@ -641,6 +643,7 @@ def purchase_retirement_list(user, write_access, params):
         ("",                                    "", "",          ""                                  ),
         ("",                                    "", "",          items[rid]                          ),
         ("",                                    "", "",          ""                                  ),
+        ("",                                    "", "",          ""                                  ),
         ("dropdown-optionset", "location.%d" % rid, "locations", ""                                  ),
         ("",                                    "", "",          "none"                              ),
         ("text",               "quantity.%d" % rid, "",          guessed_quantities.get(rid, "")     ),
@@ -652,7 +655,7 @@ def purchase_retirement_list(user, write_access, params):
 
     instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually! Additionally, not all 'purchased' items are shown here necessarily; confirm that none are left after completing this form."
 
-    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Inventory Location", "Last Quantity", "New Quantity", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
+    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Req Comment", "Inventory Location", "Last Quantity", "New Quantity", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
 
 @mode
 def retire_purchase_submit(user, write_access, params):
