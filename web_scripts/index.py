@@ -564,17 +564,12 @@ def purchase_retirement_list(user, write_access, params):
     inventory = build_latest_inventory()
     trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
 
-    updated_at = {}
-    conflicting = set()
+    counts = {}
     for i in inventory:
-        if i.itemid in updated_at:
-            conflicting.add(i.itemid)
-        if i.itemid not in updated_at or i.measurement < updated_at[i.itemid]:
-            updated_at[i.itemid] = i.measurement
+        counts[i.itemid] = counts.get(i.itemid, 0) + 1
 
-    unretired_requests = [r for r in requests if r.itemid not in updated_at or trip_dates[r.tripid] > updated_at[r.itemid]]
     requests_by_itemid = {}
-    for r in unretired_requests:
+    for r in requests:
         if r.itemid not in requests_by_itemid:
             requests_by_itemid[r.itemid] = []
         requests_by_itemid[r.itemid].append(r)
@@ -599,12 +594,12 @@ def purchase_retirement_list(user, write_access, params):
         ("",                          "", "", ""                                 ),
         ("",                          "", "", trip_dates[r.tripid]               ),
         ("checkbox", "retire.%d" % r.uid, "", ""                                 ),
-    ] for r in unretired_requests]
+    ] for r in requests]
 
     guessed_quantities = {}
     guessed_dates = {}
     for itemid in relevant_itemids:
-        if itemid not in conflicting:
+        if counts.get(itemid, 0) <= 1:
             unit = None
             quantity = 0
             okay = True
