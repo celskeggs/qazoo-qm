@@ -33,18 +33,38 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
+def simple_table(title, columns, rows, urls=None, urli=0, instructions="", wrap=None):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
+    if wrap is None:
+        headers = [columns]
+        wrapped_rows = rows
+    else:
+        assert type(wrap) is int and wrap > 0 and wrap < len(columns)
+        headers = [columns[:wrap], columns[wrap:]]
+        wrapped_rows = []
+        for row in rows:
+            wrapped_rows.append(row[:wrap])
+            wrapped_rows.append(row[wrap:])
+    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": wrapped_rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
-def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False):
+def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None):
     if instructions is None:
         instructions = ""
     elif type(instructions) is dict:
         instructions = jinja2.Markup(render(instructions))
-    return {"template": "simpletable.html", "title": title, "columns": columns, "rows": rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None, "onedit": onedit}
+    if wrap is None:
+        headers = [columns]
+        wrapped_rows = rows
+    else:
+        assert type(wrap) is int and wrap > 0 and wrap < len(columns)
+        headers = [columns[:wrap], columns[wrap:]]
+        wrapped_rows = []
+        for row in rows:
+            wrapped_rows.append(row[:wrap])
+            wrapped_rows.append(row[wrap:])
+    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": wrapped_rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None, "onedit": onedit}
 
 @mode
 def cost(user, write_access, params):
@@ -226,7 +246,8 @@ def requests(user, write_access, params):
 
     formal_options = [("", "")] + sorted(items.items(), key=lambda x: x[1])
     cost_objects = sorted(costs.items())
-    locations = [("", "")] + sorted({l.uid: l.name for l in db.query(db.Location).all()}.items())
+    locations = {l.uid: l.name for l in db.query(db.Location).all()}
+    location_options = [("", "")] + sorted(locations.items())
 
     objects = db.query(db.Request).filter_by(tripid=tripid).order_by(db.Request.submitted_at).all()
     if "state" in params:
@@ -238,7 +259,7 @@ def requests(user, write_access, params):
     optionsets = {
         "formal_options": formal_options,
         "cost_objects": cost_objects,
-        "locations": locations,
+        "locations": location_options,
     }
 
     if not edit:
@@ -249,16 +270,16 @@ def requests(user, write_access, params):
                 ("", "", "", get_by_id(items, i.itemid)         ),
                 ("", "", "", i.description or ""                ),
                 ("", "", "", render_quantity(i.quantity, i.unit)),
-                ("", "", "", i.substitution                     ),
                 ("", "", "", i.contact                          ),
                 ("", "", "", costs.get(i.costid, "#REF?")       ),
                 ("", "", "", i.coop_date                        ),
-                ("", "", "", i.comments                         ),
                 ("", "", "", i.submitted_at                     ),
                 ("", "", "", i.state                            ),
                 ("", "", "", i.updated_at                       ),
+                ("", "", "", i.substitution                     ),
+                ("", "", "", i.comments                         ),
                 ("", "", "", i.procurement_comments             ),
-                ("", "", "", i.procurement_location             ),
+                ("", "", "", locations[i.procurement_location]  ),
             ] for i in objects
         ]
         action = None
@@ -271,14 +292,14 @@ def requests(user, write_access, params):
                 ("dropdown-optionset",          "formal_name.%d" % i.uid, "formal_options",          i.itemid or ""                     ),
                 ("text",                      "informal_name.%d" % i.uid, "",                        i.description or ""                ),
                 ("text",                           "quantity.%d" % i.uid, "",                        render_quantity(i.quantity, i.unit)),
-                ("text",                      "substitutions.%d" % i.uid, "",                        i.substitution                     ),
                 ("",                                                  "", "",                        i.contact                          ),
                 ("dropdown-optionset",          "cost_object.%d" % i.uid, "cost_objects",            i.costid                           ),
                 ("date",                          "coop_date.%d" % i.uid, "",                        str(i.coop_date)                   ),
-                ("text",                           "comments.%d" % i.uid, "",                        i.comments                         ),
                 ("",                                                  "", "",                        str(i.submitted_at)                ),
                 ("dropdown",                          "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
                 ("",                                                  "", "",                        str(i.updated_at)                  ),
+                ("text",                      "substitutions.%d" % i.uid, "",                        i.substitution                     ),
+                ("text",                           "comments.%d" % i.uid, "",                        i.comments                         ),
                 ("text",               "procurement_comments.%d" % i.uid, "",                        i.procurement_comments             ),
                 ("dropdown-optionset", "procurement_location.%d" % i.uid, "locations",               i.procurement_location             ),
             ] for i in objects
@@ -298,7 +319,7 @@ def requests(user, write_access, params):
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "count": len(objects),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True)
+    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=10)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
