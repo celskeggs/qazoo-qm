@@ -33,27 +33,21 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0, instructions="", wrap=None):
+def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
     if urls is None:
         urls = [None] * len(rows)
-    rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    if wrap is None:
-        headers = [columns]
-        wrapped_rows = rows
-    else:
-        assert type(wrap) is int and wrap > 0 and wrap < len(columns)
-        headers = [columns[:wrap], columns[wrap:]]
-        wrapped_rows = []
-        for row in rows:
-            wrapped_rows.append(row[:wrap])
-            wrapped_rows.append(row[wrap:])
-    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": wrapped_rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
+    rows = [[("url", url, "", "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
+    return {"template": "simpletable.html", "title": title, "headers": [columns], "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
-def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None):
+def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None, addspans=True):
     if instructions is None:
         instructions = ""
     elif type(instructions) is dict:
         instructions = jinja2.Markup(render(instructions))
+    if addspans:
+        if addspans is True:
+            addspans = {}
+        rows = [[(addspans.get(i), ctype, cname, options, cell) for i, (ctype, cname, options, cell) in enumerate(row)] for row in rows]
     if wrap is None:
         headers = [columns]
         wrapped_rows = rows
@@ -276,6 +270,7 @@ def requests(user, write_access, params):
                 ("", "", "", i.submitted_at                              ),
                 ("", "", "", i.state                                     ),
                 ("", "", "", i.updated_at                                ),
+                ("", "", "", ""                                          ),
                 ("", "", "", i.substitution                              ),
                 ("", "", "", i.comments                                  ),
                 ("", "", "", i.procurement_comments                      ),
@@ -298,6 +293,7 @@ def requests(user, write_access, params):
                 ("",                                                  "", "",                        str(i.submitted_at)                ),
                 ("dropdown",                          "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
                 ("",                                                  "", "",                        str(i.updated_at)                  ),
+                ("",                                                  "", "",                        ""                                 ),
                 ("text",                      "substitutions.%d" % i.uid, "",                        i.substitution                     ),
                 ("text",                           "comments.%d" % i.uid, "",                        i.comments                         ),
                 ("text",               "procurement_comments.%d" % i.uid, "",                        i.procurement_comments             ),
@@ -319,7 +315,7 @@ def requests(user, write_access, params):
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "count": len(objects),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=10)
+    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=10, addspans={13: 2, 14: 4})
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]

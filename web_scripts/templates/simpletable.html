@@ -83,8 +83,8 @@
     {% endfor %}
     {% for row in rows %}
     <tr>
-        {% for ctype, cname, options, cell in row %}
-        <td>
+        {% for span, ctype, cname, options, cell in row %}
+        <td {% if span %}colspan="{{ span }}"{% endif %}>
             {% if ctype == "url" %}
                 {% if cell %}
                 <a href="{{ cname }}">{{ cell }}</a>
