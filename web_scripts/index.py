@@ -37,7 +37,8 @@ def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("url", url, "", "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    return {"template": "simpletable.html", "title": title, "headers": [columns], "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
+    headers = [(None, col) for col in columns]
+    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
 def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None, addspans=True):
     if instructions is None:
@@ -48,6 +49,7 @@ def editable_table(title, columns, rows, instructions=None, creation=None, actio
         if addspans is True:
             addspans = {}
         rows = [[(addspans.get(i), ctype, cname, options, cell) for i, (ctype, cname, options, cell) in enumerate(row)] for row in rows]
+        columns = [(addspans.get(i), col) for i, col in enumerate(columns)]
     if wrap is None:
         headers = [columns]
         wrapped_rows = rows
@@ -315,7 +317,7 @@ def requests(user, write_access, params):
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "count": len(objects),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=10, addspans={13: 2, 14: 4})
+    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=10, addspans={12: 2, 13: 4})
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]

@@ -76,8 +76,8 @@
     <table border="1">
     {% for header in headers %}
     <tr class="header">
-        {% for column in header %}
-        <td>{{ column }}</td>
+        {% for span, column in header %}
+        <td {% if span %}colspan="{{ span }}"{% endif %}>{{ column }}</td>
         {% endfor %}
     </tr>
     {% endfor %}
