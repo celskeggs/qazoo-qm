@@ -266,20 +266,20 @@ def requests(user, write_access, params):
         check = []
         rows = [
             [
-                ("", "", "", i.uid                              ),
-                ("", "", "", get_by_id(items, i.itemid)         ),
-                ("", "", "", i.description or ""                ),
-                ("", "", "", render_quantity(i.quantity, i.unit)),
-                ("", "", "", i.contact                          ),
-                ("", "", "", costs.get(i.costid, "#REF?")       ),
-                ("", "", "", i.coop_date                        ),
-                ("", "", "", i.submitted_at                     ),
-                ("", "", "", i.state                            ),
-                ("", "", "", i.updated_at                       ),
-                ("", "", "", i.substitution                     ),
-                ("", "", "", i.comments                         ),
-                ("", "", "", i.procurement_comments             ),
-                ("", "", "", locations[i.procurement_location]  ),
+                ("", "", "", i.uid                                       ),
+                ("", "", "", get_by_id(items, i.itemid)                  ),
+                ("", "", "", i.description or ""                         ),
+                ("", "", "", render_quantity(i.quantity, i.unit)         ),
+                ("", "", "", i.contact                                   ),
+                ("", "", "", costs.get(i.costid, "#REF?")                ),
+                ("", "", "", i.coop_date                                 ),
+                ("", "", "", i.submitted_at                              ),
+                ("", "", "", i.state                                     ),
+                ("", "", "", i.updated_at                                ),
+                ("", "", "", i.substitution                              ),
+                ("", "", "", i.comments                                  ),
+                ("", "", "", i.procurement_comments                      ),
+                ("", "", "", get_by_id(locations, i.procurement_location)),
             ] for i in objects
         ]
         action = None
