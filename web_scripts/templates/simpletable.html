@@ -15,9 +15,8 @@
     function on_edit(e) {
         var rows = {{ headers|count }};
         var tr = e.target.parentElement.parentElement;
-        while (rows > 1) {
+        while (rows >= 1) {
             var inputs = tr.getElementsByTagName("input");
-            console.log("checking row", tr, inputs, rows);
             var found = false;
             for (var i = 0; i < inputs.length; i++) {
                 if (inputs[i].type == "checkbox") {
@@ -28,14 +27,12 @@
                     break;
                 }
             }
-            console.log("found", found);
             if (found) {
                 break;
             }
             // if we're wrapped, need to check previous rows
             tr = tr.previousElementSibling;
             rows -= 1;
-            console.log("new:", tr, rows);
         }
     }
     {% endif %}
