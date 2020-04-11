@@ -1111,14 +1111,14 @@ def submit_drafts(user, write_access, params):
     if not write_access:
         return {"template": "error.html", "message": "no QM access"}
 
-    trip_id = int_or_none(params, "trip_id")
+    trip_id = int_or_none(params, "trip")
     if trip_id is None:
         return {"template": "error.html", "message": "invalid trip ID"}
     trip = get_shopping_trip(trip_id)
     if trip is None:
         return {"template": "error.html", "message": "trip ID not found"}
 
-    count = db.query(db.Request).filter_by(trip_id=trip_id, state=db.RequestState.draft).count()
+    count = db.query(db.Request).filter_by(tripid=trip_id, state=db.RequestState.draft).count()
 
     return {"template": "confirm.html", "instructions": "Are you certain that you want to submit all %d drafts for the shopping trip on %s?" % (count, trip.date), "action": "?mode=submit_drafts_confirmed&trip=%d" % trip_id, "cancel": "?mode=requests&trip=%d" % trip_id}
 
@@ -1127,14 +1127,14 @@ def submit_drafts_confirmed(user, write_access, params):
     if not write_access:
         return {"template": "error.html", "message": "no QM access"}
 
-    trip_id = int_or_none(params, "trip_id")
+    trip_id = int_or_none(params, "trip")
     if trip_id is None:
         return {"template": "error.html", "message": "invalid trip ID"}
     trip = get_shopping_trip(trip_id)
     if trip is None:
         return {"template": "error.html", "message": "trip ID not found"}
 
-    for request in db.query(db.Request).filter_by(trip_id=trip_id, state=db.RequestState.draft).all():
+    for request in db.query(db.Request).filter_by(tripid=trip_id, state=db.RequestState.draft).all():
         request.state = db.RequestState.submitted
     db.commit()
 
