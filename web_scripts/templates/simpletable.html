@@ -74,11 +74,13 @@
     <form action="{{ action }}" method="POST">
     {% endif %}
     <table border="1">
+    {% for header in headers %}
     <tr class="header">
-        {% for column in columns %}
+        {% for column in header %}
         <td>{{ column }}</td>
         {% endfor %}
     </tr>
+    {% endfor %}
     {% for row in rows %}
     <tr>
         {% for ctype, cname, options, cell in row %}
