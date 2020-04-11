@@ -37,7 +37,7 @@ def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("url", url, "", "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    headers = [(None, col) for col in columns]
+    headers = [[(None, col) for col in columns]]
     return {"template": "simpletable.html", "title": title, "headers": headers, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
 def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None, addspans=True):
@@ -260,6 +260,8 @@ def requests(user, write_access, params):
 
     if not edit:
         check = []
+        wrap = 10
+        spans = {12: 2, 13: 4, 14: 2}
         rows = [
             [
                 ("", "", "", i.uid                                       ),
@@ -272,6 +274,7 @@ def requests(user, write_access, params):
                 ("", "", "", i.submitted_at                              ),
                 ("", "", "", i.state                                     ),
                 ("", "", "", i.updated_at                                ),
+                # wrap
                 ("", "", "", ""                                          ),
                 ("", "", "", i.substitution                              ),
                 ("", "", "", i.comments                                  ),
@@ -282,6 +285,8 @@ def requests(user, write_access, params):
         action = None
     else: # if edit
         check = ["Edit?"]
+        wrap = 11
+        spans = {13: 2, 14: 4}
         rows = [
             [
                 ("checkbox",                           "edit.%d" % i.uid, "",                        False                              ),
@@ -295,6 +300,7 @@ def requests(user, write_access, params):
                 ("",                                                  "", "",                        str(i.submitted_at)                ),
                 ("dropdown",                          "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
                 ("",                                                  "", "",                        str(i.updated_at)                  ),
+                # wrap
                 ("",                                                  "", "",                        ""                                 ),
                 ("text",                      "substitutions.%d" % i.uid, "",                        i.substitution                     ),
                 ("text",                           "comments.%d" % i.uid, "",                        i.comments                         ),
@@ -317,7 +323,7 @@ def requests(user, write_access, params):
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "count": len(objects),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=10, addspans={12: 2, 13: 4})
+    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=wrap, addspans=spans)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]
