@@ -548,7 +548,6 @@ def handle_request_updates(user, write_access, params, trip, require_edit=False,
             # TODO: validate that this is a valid location
             procurement_location = int_or_none(params, "procurement_location.%d" % request.uid)
             if request.procurement_location != procurement_location:
-                if procurement_location is not None:
                 request.procurement_location = procurement_location
                 any_edits = True
         elif not state_only:
