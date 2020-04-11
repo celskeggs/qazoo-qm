@@ -414,6 +414,13 @@ def request_procurement_dispatching(user, write_access, params):
         "locations": location_options,
     }
 
+    all_locations = {}
+    for i in build_latest_inventory():
+        if i.itemid not in all_locations:
+            all_locations[i.itemid] = []
+        all_locations[i.itemid].append(i.locationid)
+    likely_locations = {k: v[0] for k, v in all_locations.items() if len(v) == 1}
+
     columns = ["Edit?", "ID", "Likely Location", "Item Name", "Quantity", "Contact", "Cost Object", "State", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"]
 
     # needs a "likely location" column
@@ -422,7 +429,7 @@ def request_procurement_dispatching(user, write_access, params):
         [
             ("checkbox",                           "edit.%d" % i.uid, "",                        False                                ),
             ("",                                                  "", "",                        i.uid                                ),
-            ("",                                                  "", "",                        get_by_id(locations, LIKELY_LOCATION)),
+            ("",                                                  "", "",                        get_by_id(locations, get_by_id(likely_locations, i.itemid))),
             ("",                                                  "", "",                        get_by_id(items, i.itemid)           ),
             ("",                                                  "", "",                        render_quantity(i.quantity, i.unit)  ),
             ("",                                                  "", "",                        i.contact                            ),
