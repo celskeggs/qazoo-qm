@@ -289,6 +289,7 @@ def requests(user, write_access, params):
         "comparelink": "?mode=compare_inventory&trip=%d" % (trip.uid),
         "shoppinglink": "?mode=shopping_list&trip=%d" % (trip.uid),
         "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
+        "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "count": len(objects),
     }
     return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Contact", "Cost Object", "Co-op Date", "Comments", "Submitted At", "State", "Updated At"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True)
@@ -1104,6 +1105,40 @@ def personal_transactions(user, write_access, params):
     instructions = "If you have an outstanding balance, please send it via Venmo to %s." % QM_VENMO
 
     return simple_table("Personal Transactions for " + user, ["ID", "Account", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, instructions=instructions)
+
+@mode
+def submit_drafts(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    trip_id = int_or_none(params, "trip_id")
+    if trip_id is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(trip_id)
+    if trip is None:
+        return {"template": "error.html", "message": "trip ID not found"}
+
+    count = db.query(db.Request).filter_by(trip_id=trip_id, state=db.RequestState.draft).count()
+
+    return {"template": "confirm.html", "instructions": "Are you certain that you want to submit all %d drafts for the shopping trip on %s?" % (count, trip.date), "action": "?mode=submit_drafts_confirmed&trip=%d" % trip_id, "cancel": "?mode=requests&trip=%d" % trip_id}
+
+@mode
+def submit_drafts_confirmed(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    trip_id = int_or_none(params, "trip_id")
+    if trip_id is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(trip_id)
+    if trip is None:
+        return {"template": "error.html", "message": "trip ID not found"}
+
+    for request in db.query(db.Request).filter_by(trip_id=trip_id, state=db.RequestState.draft).all():
+        request.state = db.RequestState.submitted
+    db.commit()
+
+    return requests(user, write_access, {"trip": params["trip"]})
 
 @mode
 def debug(user, write_access, params):

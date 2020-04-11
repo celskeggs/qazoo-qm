@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>QQMI</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Are you sure?</h2>
+
+    {{ instructions }}
+
+    <form action="{{ action }}" method="POST"><input type="submit" value="Yes"></form>
+    <p><a href="{{ cancel }}">No, return</a></p>
+    <p><a href="?mode=overview">Go back to overview</a></p>
+</body>
+</html>
+
