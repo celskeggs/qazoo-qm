@@ -259,7 +259,7 @@ def requests(user, write_access, params):
     }
 
     if not edit:
-        check = []
+        columns = ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"]
         wrap = 10
         spans = {12: 2, 13: 4, 14: 2}
         rows = [
@@ -284,9 +284,9 @@ def requests(user, write_access, params):
         ]
         action = None
     else: # if edit
-        check = ["Edit?"]
+        columns = ["Edit?", "ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"]
         wrap = 11
-        spans = {13: 2, 14: 4}
+        spans = {13: 2, 14: 4, 15: 2}
         rows = [
             [
                 ("checkbox",                           "edit.%d" % i.uid, "",                        False                              ),
@@ -301,6 +301,7 @@ def requests(user, write_access, params):
                 ("dropdown",                          "state.%d" % i.uid, state_options(i, qm=True), i.state                            ),
                 ("",                                                  "", "",                        str(i.updated_at)                  ),
                 # wrap
+                ("",                                                  "", "",                        ""                                 ),
                 ("",                                                  "", "",                        ""                                 ),
                 ("text",                      "substitutions.%d" % i.uid, "",                        i.substitution                     ),
                 ("text",                           "comments.%d" % i.uid, "",                        i.comments                         ),
@@ -323,7 +324,7 @@ def requests(user, write_access, params):
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "count": len(objects),
     }
-    return editable_table("Request Review List for " + str(trip.date), check + ["ID", "Formal Item Name", "Informal Description", "Quantity", "Contact", "Cost Object", "Co-op Date", "Submitted At", "State", "Updated At", "", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"], rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=wrap, addspans=spans)
+    return editable_table("Request Review List for " + str(trip.date), columns, rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=wrap, addspans=spans)
 
 def allowable_states(request, qm=False):
     return [request.state] + db.RequestState.ALLOWABLE[request.state][qm]

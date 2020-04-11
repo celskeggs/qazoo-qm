@@ -13,14 +13,21 @@
     <script>
     {% if onedit %}
     function on_edit(e) {
-        var inputs = e.target.parentElement.parentElement.getElementsByTagName("input");
-        for (var i = 0; i < inputs.length; i++) {
-            if (inputs[i].type == "checkbox") {
-                if (inputs[i] != e.target) {
-                    inputs[i].checked = true;
+        var rows = {{ len(headers) }};
+        var tr = e.target.parentElement.parentElement;
+        while (rows > 1) {
+            var inputs = tr.getElementsByTagName("input");
+            for (var i = 0; i < inputs.length; i++) {
+                if (inputs[i].type == "checkbox") {
+                    if (inputs[i] != e.target) {
+                        inputs[i].checked = true;
+                    }
+                    break;
                 }
-                break;
             }
+            // if we're wrapped, need to check previous rows
+            tr = tr.previousElementSibling;
+            rows -= 1;
         }
     }
     {% endif %}
