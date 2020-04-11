@@ -408,7 +408,7 @@ def request_procurement_dispatching(user, write_access, params):
     locations = {l.uid: l.name for l in db.query(db.Location).all()}
     location_options = [("", "")] + sorted(locations.items())
 
-    objects = db.query(db.Request).filter_by(tripid=tripid, state=db.RequestState.accepted, db.Request.coop_date != None).all()
+    objects = db.query(db.Request).filter(db.Request.tripid == tripid, db.Request.state == db.RequestState.accepted, db.Request.coop_date != None).all()
 
     optionsets = {
         "locations": location_options,
