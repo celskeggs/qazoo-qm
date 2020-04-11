@@ -322,6 +322,7 @@ def requests(user, write_access, params):
         "shoppinglink": "?mode=shopping_list&trip=%d" % (trip.uid),
         "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
+        "procurementlink": "?mode=request_procurement_dispatching&trip=%d" % (trip.uid),
         "count": len(objects),
     }
     return editable_table("Request Review List for " + str(trip.date), columns, rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=wrap, addspans=spans)
@@ -388,6 +389,53 @@ def request_entry(user, write_access, params):
         "user": user,
     }
     return editable_table("Request Entry Form for " + trip_date, ["Edit?", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
+
+@mode
+def request_procurement_dispatching(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+
+    locations = {l.uid: l.name for l in db.query(db.Location).all()}
+    location_options = [("", "")] + sorted(locations.items())
+
+    objects = db.query(db.Request).filter_by(tripid=tripid, state=db.RequestState.accepted).all()
+
+    optionsets = {
+        "locations": location_options,
+    }
+
+    columns = ["Edit?", "ID", "Likely Location", "Item Name", "Quantity", "Contact", "Cost Object", "State", "Substitution Requirements", "Comments", "Procurement Comments", "Procurement Location"]
+
+    # needs a "likely location" column
+
+    rows = [
+        [
+            ("checkbox",                           "edit.%d" % i.uid, "",                        False                                ),
+            ("",                                                  "", "",                        i.uid                                ),
+            ("",                                                  "", "",                        get_by_id(locations, LIKELY_LOCATION)),
+            ("",                                                  "", "",                        get_by_id(items, i.itemid)           ),
+            ("",                                                  "", "",                        render_quantity(i.quantity, i.unit)  ),
+            ("",                                                  "", "",                        i.contact                            ),
+            ("",                                                  "", "",                        costs.get(i.costid, "#REF?")         ),
+            ("dropdown",                          "state.%d" % i.uid, state_options(i, qm=True), i.state                              ),
+            ("",                                                  "", "",                        i.substitution                       ),
+            ("",                                                  "", "",                        i.comments                           ),
+            ("text",               "procurement_comments.%d" % i.uid, "",                        i.procurement_comments               ),
+            ("dropdown-optionset", "procurement_location.%d" % i.uid, "locations",               i.procurement_location               ),
+        ] for i in objects
+    ]
+    action = "?mode=request_procurement_update&trip=%d" % trip.uid
+    return editable_table("Procurement Dispositioning List for " + str(trip.date), columns, rows, action=action, optionsets=optionsets, onedit=True)
 
 def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allowable_states):
     formal_name = int_or_none(params, "formal_name" + suffix)
@@ -459,7 +507,7 @@ def merge_changes(target, source):
 
     return changes
 
-def handle_request_updates(user, write_access, params, trip, require_edit=False, state_only=False):
+def handle_request_updates(user, write_access, params, trip, require_edit=False, state_only=False, procurement_only=False):
     if write_access:
         allowable_cost_ids = cost_objects_by_uids().keys()
     else:
@@ -485,15 +533,25 @@ def handle_request_updates(user, write_access, params, trip, require_edit=False,
         if require_edit and params.get("edit.%d" % request.uid) != "on":
             continue
 
-        if state_only:
-            key = "state.%d" % request.uid
-            state = params.get(key)
+        if state_only or procurement_only:
+            state = params.get("state.%d" % request.uid)
             if state is not None and request.state != state:
                 if state not in allowable_states(request, qm=write_access):
                     return {"template": "error.html", "message": "invalid state: %s" % repr(state)}
                 request.state = state
                 any_edits = True
-        else:
+        if procurement_only:
+            procurement_comments = params.get("procurement_comments.%d" % request.uid, "")
+            if request.procurement_comments != procurement_comments:
+                request.procurement_comments = procurement_comments
+                any_edits = True
+            # TODO: validate that this is a valid location
+            procurement_location = int_or_none(params, "procurement_location.%d" % request.uid)
+            if request.procurement_location != procurement_location:
+                if procurement_location is not None:
+                request.procurement_location = procurement_location
+                any_edits = True
+        elif not state_only:
             updated_request = create_request_from_params(params, ".%d" % request.uid, tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=allowable_states(request, qm=write_access))
             if updated_request is None:
                 return {"template": "error.html", "message": "attempt to change request to have no item name, formal or informal"}
@@ -502,12 +560,12 @@ def handle_request_updates(user, write_access, params, trip, require_edit=False,
             if merge_changes(request, updated_request):
                 any_edits = True
 
-    if not state_only:
+    if state_only or procurement_only:
+        new_request = None
+    else:
         new_request = create_request_from_params(params, ".new", tripid=trip.uid, contact=user, allowable_cost_ids=allowable_cost_ids, allowable_states=[db.RequestState.draft])
         if type(new_request) == str:
             return {"template": "error.html", "message": new_request}
-    else:
-        new_request = None
     if new_request is not None:
         db.add(new_request)
     elif any_edits:
@@ -543,6 +601,22 @@ def request_modify(user, write_access, params):
     if "state_view" in params:
         nparams["state"] = params["state_view"]
     return requests(user, write_access, nparams)
+
+@mode
+def request_procurement_update(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+    res = handle_request_updates(user, write_access, params, trip, require_edit=True, procurement_only=True)
+    if res is not None:
+        return res
+    nparams = {"trip": params["trip"]}
+    return request_procurement_dispatching(user, write_access, nparams)
 
 def build_latest_inventory(*filter_queries):
     inventory = db.query(db.Inventory).filter(*filter_queries).order_by(db.Inventory.measurement).all()
