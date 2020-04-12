@@ -1118,15 +1118,15 @@ def review_transactions(user, write_access, params):
 
     if write_access:
         creation = [
-            ("",                  "", "",             ""                              ),
-            ("dropdown", "credit_id", cost_objects,   last.credit_id if last else ""  ),
-            ("dropdown",  "debit_id", cost_objects,   last.debit_id if last else ""   ),
-            ("text",        "amount", "",             ""                              ),
-            ("dropdown",   "trip_id", trips_dropdown, last.trip_id if last else ""    ),
-            ("text",    "request_id", "",             ""                              ),
-            ("",                  "", "",             ""                              ),
-            ("text",   "description", "",             last.description if last else ""),
-            ("",                  "", "",             "now"                           ),
+            ("",                  "", "",             ""                                                   ),
+            ("dropdown", "credit_id", cost_objects,   costs.get(last.credit_id, "") if last else ""        ),
+            ("dropdown",  "debit_id", cost_objects,   costs.get(last.debit_id, "") if last else ""         ),
+            ("text",        "amount", "",             ""                                                   ),
+            ("dropdown",   "trip_id", trips_dropdown, get_by_id(date_by_trip, last.trip_id) if last else ""),
+            ("text",    "request_id", "",             ""                                                   ),
+            ("",                  "", "",             ""                                                   ),
+            ("text",   "description", "",             last.description if last else ""                     ),
+            ("",                  "", "",             "now"                                                ),
         ]
     else:
         creation = []
