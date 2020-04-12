@@ -131,7 +131,7 @@
             {% if ctype == "dropdown" %}
             <select name="{{ cname }}">
                 {% for optionname, optionvalue in options %}
-                <option value="{{ optionname }}"{% if optionname == cell %} selected{% endif %}>{{ optionvalue }}</option>
+                <option value="{{ optionname }}"{% if optionname == column %} selected{% endif %}>{{ optionvalue }}</option>
                 {% endfor %}
             </select>
             {% elif ctype == "dropdown-optionset" %}
