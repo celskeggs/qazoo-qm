@@ -1128,7 +1128,6 @@ def review_transactions(user, write_access, params):
             ("text",   "description", "",             last.description if last else ""                     ),
             ("",                  "", "",             "now"                                                ),
         ]
-        assert False, "info: %s %s" % (repr(last), repr(creation))
     else:
         creation = []
 
