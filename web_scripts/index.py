@@ -36,7 +36,7 @@ def build_table(objects, *columns):
 def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
     if urls is None:
         urls = [None] * len(rows)
-    rows = [[("url", url, "", "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
+    rows = [[("", "url", url, "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
     headers = [[(None, col) for col in columns]]
     return {"template": "simpletable.html", "title": title, "headers": headers, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
