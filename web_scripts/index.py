@@ -88,7 +88,7 @@ def item_types_edit(user, write_access, params):
         if trip is None:
             return {"template": "error.html", "message": "unrecognized trip ID"}
 
-        requests = db.query(db.Request).filter(db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.rejected, db.RequestState.retracted])).all()
+        requests = db.query(db.Request).filter(db.Request.tripid == tripid, ~db.Request.state.in_([db.RequestState.rejected, db.RequestState.retracted, db.RequestState.to_reserve])).all()
         items = {r.itemid for r in requests}
 
     objects = db.query(db.ItemType).all()
@@ -1058,7 +1058,7 @@ def shopping_list(user, write_access, params):
     rows = [
         [
             ("checkbox", "", "", ""),
-            ("", "", "", get_by_id(aisles, i.itemid)),
+            ("", "", "", get_by_id(aisles, i.itemid) or "UNKNOWN"),
             ("", "", "", get_by_id(items, i.itemid)),
             ("", "", "", render_quantity(i.quantity, i.unit)),
             ("", "", "", i.substitution),
