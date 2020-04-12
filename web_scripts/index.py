@@ -1114,17 +1114,19 @@ def review_transactions(user, write_access, params):
     cost_objects = sorted(costs.items())
     trips_dropdown = [("", "")] + sorted(date_by_trip.items())
 
+    last = transactions[-1] if transactions else None
+
     if write_access:
         creation = [
-            ("",                  "", "",             ""   ),
-            ("dropdown", "credit_id", cost_objects,   ""   ),
-            ("dropdown",  "debit_id", cost_objects,   ""   ),
-            ("text",        "amount", "",             ""   ),
-            ("dropdown",   "trip_id", trips_dropdown, ""   ),
-            ("text",    "request_id", "",             ""   ),
-            ("",                  "", "",             ""   ),
-            ("text",   "description", "",             ""   ),
-            ("",                  "", "",             "now"),
+            ("",                  "", "",             ""                              ),
+            ("dropdown", "credit_id", cost_objects,   last.credit_id if last else ""  ),
+            ("dropdown",  "debit_id", cost_objects,   last.debit_id if last else ""   ),
+            ("text",        "amount", "",             ""                              ),
+            ("dropdown",   "trip_id", trips_dropdown, last.trip_id if last else ""    ),
+            ("text",    "request_id", "",             ""                              ),
+            ("",                  "", "",             ""                              ),
+            ("text",   "description", "",             last.description if last else ""),
+            ("",                  "", "",             "now"                           ),
         ]
     else:
         creation = []
