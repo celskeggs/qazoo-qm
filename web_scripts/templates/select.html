@@ -1,0 +1,7 @@
+<form action="{{ action }}" method="POST">
+<select name="{{ name }}">
+    {% for optionname, optionvalue in options %}
+        <option value="{{ optionname }}"{% if optionname == selection %} selected{% endif %}>{{ optionvalue }}</option>
+    {% endfor %}
+</select>
+</form>
