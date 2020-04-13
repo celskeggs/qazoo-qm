@@ -33,7 +33,11 @@ def overview(user, write_access, params):
 def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
-def simple_table(title, columns, rows, urls=None, urli=0, instructions=""):
+def simple_table(title, columns, rows, urls=None, urli=0, instructions=None):
+    if instructions is None:
+        instructions = ""
+    elif type(instructions) is dict:
+        instructions = jinja2.Markup(render(instructions))
     if urls is None:
         urls = [None] * len(rows)
     rows = [[("", "url", url, "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
@@ -395,8 +399,24 @@ def request_results(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
     locations = locations_by_uids()
+    trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
 
-    objects = db.query(db.Request).filter_by(contact=user).order_by(db.Request.submitted_at).all()
+    tripid = int_or_none(params, "trip")
+    if tripid is not None and tripid not in trip_dates:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    instructions = {
+        "template": "select.html",
+        "action": "?mode=request_results",
+        "name": "trip",
+        "options": [("", "")] + list(trip_dates.items()),
+        "selection": tripid,
+    }
+
+    if trip is None:
+        objects = db.query(db.Request).filter_by(contact=user, tripid=tripid).order_by(db.Request.submitted_at).all()
+    else:
+        objects = db.query(db.Request).filter_by(contact=user).order_by(db.Request.submitted_at).all()
     objects.reverse()
 
     rows = [
@@ -415,7 +435,7 @@ def request_results(user, write_access, params):
             ("R-%d" % i.uid if i.coop_date is not None else ""),
         ] for i in objects
     ]
-    return simple_table("Previous Request Results", ["ID", "Item Name", "Informal Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location", "Procurement ID"], rows)
+    return simple_table("Previous Request Results", ["ID", "Item Name", "Informal Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location", "Procurement ID"], rows, instructions=instructions)
 
 @mode
 def request_procurement_dispatching(user, write_access, params):
