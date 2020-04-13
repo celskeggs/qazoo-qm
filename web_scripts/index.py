@@ -413,7 +413,7 @@ def request_results(user, write_access, params):
         "selection": tripid,
     }
 
-    if tripid is None:
+    if tripid is not None:
         objects = db.query(db.Request).filter_by(contact=user, tripid=tripid).order_by(db.Request.submitted_at).all()
     else:
         objects = db.query(db.Request).filter_by(contact=user).order_by(db.Request.submitted_at).all()
