@@ -394,6 +394,7 @@ def request_entry(user, write_access, params):
 def request_results(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
+    locations = locations_by_uids()
 
     objects = db.query(db.Request).filter_by(contact=user).order_by(db.Request.submitted_at).all()
     objects.reverse()
@@ -410,7 +411,7 @@ def request_results(user, write_access, params):
             i.comments,
             i.state,
             i.procurement_comments,
-            i.procurement_location,
+            get_by_id(locations, i.procurement_location),
         ] for i in objects
     ]
     return simple_table("Previous Request Results", ["ID", "Item Name", "Informal Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location"], rows)
