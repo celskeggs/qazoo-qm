@@ -412,7 +412,7 @@ def request_results(user, write_access, params):
             i.procurement_location,
         ] for i in objects
     ]
-    return simple_table("Request Entry Form for " + trip_date, ["ID", "Item Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location"], rows)
+    return simple_table("Previous Request Results", ["ID", "Item Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location"], rows)
 
 @mode
 def request_procurement_dispatching(user, write_access, params):
