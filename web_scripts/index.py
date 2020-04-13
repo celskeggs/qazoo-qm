@@ -1216,9 +1216,6 @@ def personal_transactions(user, write_access, params):
     items = item_names_by_uids()
     costs = cost_objects_by_uids()
 
-    if write_access and params.get("impersonate"):
-        user = params["impersonate"]
-
     user_uids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=user).all()]
     if not user_uids:
         return {"template": "error.html", "message": "no cost object found for user"}
@@ -1306,6 +1303,9 @@ def process_index():
 
     if mode not in modes:
         return {"template": "notfound.html"}
+
+    if write_access and params.get("impersonate"):
+        user = params["impersonate"]
 
     if param_as_str(params, "act") == "mortal":
         write_access = False
