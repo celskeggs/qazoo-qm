@@ -412,9 +412,10 @@ def request_results(user, write_access, params):
             i.state,
             i.procurement_comments,
             get_by_id(locations, i.procurement_location),
+            ("R-%d" % i.uid if i.coop_date is not None else ""),
         ] for i in objects
     ]
-    return simple_table("Previous Request Results", ["ID", "Item Name", "Informal Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location"], rows)
+    return simple_table("Previous Request Results", ["ID", "Item Name", "Informal Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location", "Procurement ID"], rows)
 
 @mode
 def request_procurement_dispatching(user, write_access, params):
