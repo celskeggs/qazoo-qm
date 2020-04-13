@@ -407,7 +407,7 @@ def request_results(user, write_access, params):
             render_quantity(i.quantity, i.unit),
             i.substitution,
             get_by_id(costs, i.costid),
-            str(i.coop_date),
+            i.coop_date or "",
             i.comments,
             i.state,
             i.procurement_comments,
