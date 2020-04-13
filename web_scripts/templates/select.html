@@ -1,4 +1,4 @@
-<form action="{{ action }}" method="{{ method }}">
+<form action="{{ action }}" method="POST">
 <p>Trip: <select name="{{ name }}">
     {% for optionname, optionvalue in options %}
         <option value="{{ optionname }}"{% if optionname == selection %} selected{% endif %}>{{ optionvalue }}</option>

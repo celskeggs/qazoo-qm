@@ -411,7 +411,6 @@ def request_results(user, write_access, params):
         "name": "trip",
         "options": [("", "")] + list(trip_dates.items()),
         "selection": tripid,
-        "method": "GET",
     }
 
     if tripid is not None:
