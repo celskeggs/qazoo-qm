@@ -391,6 +391,30 @@ def request_entry(user, write_access, params):
     return editable_table("Request Entry Form for " + trip_date, ["Edit?", "Formal Item Name", "Informal Description", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State"], rows, instructions=instructions, creation=creation, action="?mode=request_submit&trip=%d" % trip.uid, optionsets=optionsets)
 
 @mode
+def request_results(user, write_access, params):
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+
+    objects = db.query(db.Request).filter_by(contact=user).order_by(db.Request.submitted_at).all()
+    objects.reverse()
+
+    rows = [
+        [
+            i.uid,
+            get_by_id(items, i.itemid),
+            render_quantity(i.quantity, i.unit),
+            i.substitution,
+            get_by_id(costs, i.costid),
+            str(i.coop_date),
+            i.comments,
+            i.state,
+            i.procurement_comments,
+            i.procurement_location,
+        ] for i in objects
+    ]
+    return simple_table("Request Entry Form for " + trip_date, ["ID", "Item Name", "Quantity", "Substitution Requirements", "Cost Object", "Co-op Date", "Comments", "State", "Procurement Comments", "Procurement Location"], rows)
+
+@mode
 def request_procurement_dispatching(user, write_access, params):
     if not write_access:
         return {"template": "error.html", "message": "no QM access"}
