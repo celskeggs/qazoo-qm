@@ -123,7 +123,7 @@ class Request(SQLBase):
     comments = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     submitted_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
     updated_at = sqlalchemy.Column(sqlalchemy.DateTime(), nullable=False)
-    state = sqlalchemy.Column(sqlalchemy.Enum(RequestState.VALUES), nullable=False)
+    state = sqlalchemy.Column(sqlalchemy.Enum(*RequestState.VALUES), nullable=False)
     procurement_comments = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     procurement_location = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
 
