@@ -219,7 +219,7 @@ def inventory(user, write_access, params):
     items = item_names_by_uids()
     locations = locations_by_uids()
     objects = build_latest_inventory()
-    rows = build_table(objects, lambda i: items.get(i.itemid, "#REF?"), lambda i: render_quantity(i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement", lambda i: "yes" if i.full_inventory else "no")
+    rows = build_table(objects, lambda i: i.item.name, lambda i: render_quantity(i.quantity, i.unit), lambda i: locations.get(i.locationid, "#REF?"), "measurement", lambda i: "yes" if i.full_inventory else "no")
     rows.sort(key=lambda row: (row[0], row[2]))
     return simple_table("Inventory", ["Name", "Quantity", "Location", "Last Updated At", "Full re-inventory?"], rows, instructions="Number of inventory entries: %d" % len(rows))
 

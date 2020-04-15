@@ -22,7 +22,8 @@ class Location(SQLBase):
 class Inventory(SQLBase):
     __tablename__ = "inventory"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
-    itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
+    itemid = sqlalchemy.Column(sqlalchemy.Integer(), ForeignKey("item_type.uid"), nullable=False)
+    item = relationship("ItemType")
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
     unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
     locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
@@ -146,25 +147,6 @@ class Transaction(SQLBase):
     request_id = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
     description = sqlalchemy.Column(sqlalchemy.String(255), nullable=False)
     added_at = sqlalchemy.Column(sqlalchemy.TIMESTAMP(), nullable=False)
-
-#class ShoppingIntention(SQLBase):
-#    __tablename__ == "shopping_intention"
-#    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
-#    tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-#    itemid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-#    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
-#    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
-#    substitutions = sqlalchemy.Column(sqlalchemy.Text(), nullable=False)
-#    notes = sqlalchemy.Column(sqlalchemy.Text(), nullable=False)
-
-#class ShoppingResult(SQLBase):
-#    __tablename__ == "shopping_intention"
-#    uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
-#    tripid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
-#    intentionid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=True)
-#    quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
-#    unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
-#    cost_total_dollars = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
 
 with open(os.path.join(os.getenv("HOME"), ".my.cnf")) as f:
     password = dict(line.strip().split("=") for line in f if line.count("=") == 1)["password"]
