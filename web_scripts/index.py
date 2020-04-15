@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import cgitb; cgitb.enable()
 import cgi
@@ -9,7 +9,6 @@ import jinja2
 import json
 import kerbparse
 import moira
-import urlparse
 from collections import namedtuple
 
 QM = "cela"
@@ -1337,7 +1336,7 @@ def render(results):
     return jenv.get_template(results["template"]).render(**results)
 
 def print_index():
-    page = render(process_index()).encode("utf-8")
+    page = render(process_index())
 
     print("Content-type: text/html\n")
     print(page)

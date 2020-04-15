@@ -6,7 +6,7 @@ def scan_acl(acl_name, strip_instance=True):
     try:
         assert acl_name[0:1].isalpha()
         members = set()
-        for line in subprocess.check_output(["/mit/ops/bin/qy", "-n", "-s", "geml", acl_name], stderr=devnull).split("\n"):
+        for line in subprocess.check_output(["/mit/ops/bin/qy", "-n", "-s", "geml", acl_name], stderr=devnull).decode().split("\n"):
             if not line.strip(): continue
             mem_type, mem_name = line.strip().split(", ")
             if mem_type == "USER":
@@ -22,20 +22,20 @@ def scan_acl(acl_name, strip_instance=True):
 
 def list_exists(list_name):
     try:
-        return list_name[0:1].isalpha() and subprocess.check_output(["/mit/ops/bin/qy", "-n", "-s", "-f", "active", "glin", list_name], stderr=devnull).strip() == "1"
+        return list_name[0:1].isalpha() and subprocess.check_output(["/mit/ops/bin/qy", "-n", "-s", "-f", "active", "glin", list_name], stderr=devnull).decode().strip() == "1"
     except subprocess.CalledProcessError:
         return False
 
 def email_to_user(email):
     try:
-        kv = subprocess.check_output(["/mit/consult/bin/ldaps", "--", "mail=%s" % email, "uid"], stderr=devnull).strip().split("\n")[-1].split(": ",1)
+        kv = subprocess.check_output(["/mit/consult/bin/ldaps", "--", "mail=%s" % email, "uid"], stderr=devnull).decode().strip().split("\n")[-1].split(": ",1)
         return (kv[1:] and kv[1]) or None
     except subprocess.CalledProcessError:
         return None
 
 def user_to_email(name):
     try:
-        kv = subprocess.check_output(["/mit/consult/bin/ldaps", "--", "uid=%s" % name, "mail"], stderr=devnull).strip().split("\n")[-1].split(": ",1)
+        kv = subprocess.check_output(["/mit/consult/bin/ldaps", "--", "uid=%s" % name, "mail"], stderr=devnull).decode().strip().split("\n")[-1].split(": ",1)
         return (kv[1:] and kv[1]) or None
     except subprocess.CalledProcessError:
         return None
@@ -55,14 +55,3 @@ def has_access(user, mailing_list):
     if email_to_user(mailing_list) == user:
         return True
     return False
-
-def stella(hostname):
-    if hostname[0:1] == "-":
-        return "-- no invocation; invalid hostname --"
-    so, se = subprocess.Popen(["stella", "-noauth", hostname], stdin=devnull, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    if se:
-        if so:
-            so += "\n -- stderr --\n" + se
-        else:
-            so = se
-    return so
