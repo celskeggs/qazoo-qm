@@ -22,8 +22,8 @@ class Location(SQLBase):
 class Inventory(SQLBase):
     __tablename__ = "inventory"
     uid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False, primary_key=True)
-    itemid = sqlalchemy.Column(sqlalchemy.Integer(), ForeignKey("item_type.uid"), nullable=False)
-    item = relationship("ItemType")
+    itemid = sqlalchemy.Column(sqlalchemy.Integer(), sqlalchemy.ForeignKey("item_type.uid"), nullable=False)
+    item = sqlalchemy.orm.relationship("ItemType")
     quantity = sqlalchemy.Column(sqlalchemy.DECIMAL(18, 2), nullable=False)
     unit = sqlalchemy.Column(sqlalchemy.String(63), nullable=False)
     locationid = sqlalchemy.Column(sqlalchemy.Integer(), nullable=False)
