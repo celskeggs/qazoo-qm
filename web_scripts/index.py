@@ -487,7 +487,7 @@ def request_procurement_dispatching(user, write_access, params):
             ("dropdown-optionset", "procurement_location.%d" % i.uid, "locations",               i.procurement_location               ),
         ] for i in objects
     ]
-    rows.sort(key=lambda r: (r[2], r[3]))
+    rows.sort(key=lambda r: (r[2] or "", r[3] or ""))
     action = "?mode=request_procurement_update&trip=%d" % trip.uid
     return editable_table("Procurement Dispositioning List for " + str(trip.date), columns, rows, action=action, optionsets=optionsets, onedit=True)
 
