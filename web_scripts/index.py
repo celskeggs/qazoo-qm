@@ -725,97 +725,28 @@ def inventory_review_list(user, write_access, params):
 @mode
 def purchase_retirement_list(user, write_access, params):
     communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
-    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.state == db.RequestState.purchased, db.Request.costid.in_(communal_costids)).all()
-    inventory = build_latest_inventory()
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.state == db.RequestState.purchased, db.Request.costid.in_(communal_costids), db.Request.procurement_location != None).all()
+
     trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
-
-    counts = {}
-    for i in inventory:
-        counts[i.itemid] = counts.get(i.itemid, 0) + 1
-
-    requests_by_itemid = {}
-    for r in requests:
-        if r.itemid not in requests_by_itemid:
-            requests_by_itemid[r.itemid] = []
-        requests_by_itemid[r.itemid].append(r)
-    relevant_itemids = set(requests_by_itemid.keys())
-    relevant_inventory = [i for i in inventory if i.itemid in relevant_itemids]
 
     locations = locations_by_uids()
     items = item_names_by_uids()
-
-    optionsets = {
-        "locations": [("","")] + sorted(locations.items()),
-    }
 
     # line to represent the request
     rows = [[
         ("",                          "", "", str(r.uid)                         ),
         ("",                          "", "", items[r.itemid]                    ),
-        ("",                          "", "", render_quantity(r.quantity, r.unit)),
         ("",                          "", "", r.comments                         ),
-        ("",                          "", "", ""                                 ),
-        ("",                          "", "", ""                                 ),
-        ("",                          "", "", ""                                 ),
+        ("",                          "", "", r.procurement_comments             ),
+        ("text",   "quantity.%d" % r.uid, "", render_quantity(r.quantity, r.unit)),
+        ("",                          "", "", locations[r.procurement_location]  ),
         ("",                          "", "", trip_dates[r.tripid]               ),
         ("checkbox", "retire.%d" % r.uid, "", ""                                 ),
     ] for r in requests]
 
-    guessed_quantities = {}
-    guessed_dates = {}
-    for itemid in relevant_itemids:
-        if counts.get(itemid, 0) <= 1:
-            unit = None
-            quantity = 0
-            okay = True
-            dates = set()
-            for i in relevant_inventory:
-                if i.itemid == itemid and (unit is None or unit == i.unit):
-                    unit = i.unit
-                    quantity += i.quantity
-            for r in requests_by_itemid[itemid]:
-                if unit is None or r.unit == unit:
-                    unit = r.unit
-                    quantity += r.quantity
-                else:
-                    okay = False
-                dates.add(trip_dates[r.tripid])
-            if okay:
-                guessed_quantities[itemid] = render_quantity(quantity, unit)
-            if len(dates) == 1:
-                guessed_dates[itemid] = list(dates)[0]
-
-    # line pre-populated from previous information
-    rows += [[
-        ("",                                              "", "", ""                                  ),
-        ("",                                              "", "", items[i.itemid]                     ),
-        ("",                                              "", "", ""                                  ),
-        ("",                                              "", "", ""                                  ),
-        ("",                                              "", "", locations[i.locationid]             ),
-        ("",                                              "", "", render_quantity(i.quantity, i.unit) ),
-        ("text", "quantity.%d.%d" % (i.itemid, i.locationid), "", guessed_quantities.get(i.itemid, "")),
-        ("date",     "date.%d.%d" % (i.itemid, i.locationid), "", guessed_dates.get(i.itemid, "")     ),
-        ("checkbox", "done.%d.%d" % (i.itemid, i.locationid), "", ""                                  ),
-    ] for i in relevant_inventory]
-
-    # line available to be populated in a new way
-    rows += [[
-        ("",                                    "", "",          ""                                  ),
-        ("",                                    "", "",          items[rid]                          ),
-        ("",                                    "", "",          ""                                  ),
-        ("",                                    "", "",          ""                                  ),
-        ("dropdown-optionset", "location.%d" % rid, "locations", ""                                  ),
-        ("",                                    "", "",          "none"                              ),
-        ("text",               "quantity.%d" % rid, "",          guessed_quantities.get(rid, "")     ),
-        ("date",                   "date.%d" % rid, "",          guessed_dates.get(rid, "")          ),
-        ("checkbox",                "new.%d" % rid, "",          ""                                  ),
-    ] for rid in relevant_itemids]
-
-    rows.sort(key=lambda row: (row[1], row[0], row[3]))
-
     instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually! Additionally, not all 'purchased' items are shown here necessarily; confirm that none are left after completing this form."
 
-    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Quantity", "Req Comment", "Inventory Location", "Last Quantity", "New Quantity", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
+    return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Comment", "Procurement Comment", "Req Quantity", "Inventory Location", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
 
 @mode
 def retire_purchase_submit(user, write_access, params):
@@ -823,53 +754,31 @@ def retire_purchase_submit(user, write_access, params):
         return {"template": "error.html", "message": "no QM access"}
 
     communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
-    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.state == db.RequestState.purchased, db.Request.costid.in_(communal_costids)).all()
+    requests = db.query(db.Request).filter(db.Request.itemid != None, db.Request.state == db.RequestState.purchased, db.Request.costid.in_(communal_costids), db.Request.procurement_location != None).all()
     requests_by_id = {r.uid: r for r in requests}
+
+    trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
 
     count = 0
     for p in params:
         parts = p.split(".")
-        if parts[0] == "done" and len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit() and params[p] == "on":
-            itemid, locationid = int(parts[1]), int(parts[2])
-            quantity, unit = parse_quantity(params.get("quantity.%d.%d" % (itemid, locationid)))
-            if quantity is None:
-                return {"template": "error.html", "message": "could not parse quantity"}
-            date = params.get("date.%d.%d" % (itemid, locationid))
-            if date is None:
-                return {"template": "error.html", "message": "could not find date"}
-            db.add_no_commit(db.Inventory(
-                itemid = itemid,
-                locationid = locationid,
-                quantity = quantity,
-                unit = unit,
-                measurement = date,
-                full_inventory = False,
-            ))
-            count += 1
-        elif parts[0] == "retire" and len(parts) == 2 and parts[1].isdigit() and params[p] == "on":
+        if parts[0] == "retire" and len(parts) == 2 and parts[1].isdigit() and params[p] == "on":
             req = requests_by_id.get(int(parts[1]))
             if req is None:
                 return {"template": "error.html", "message": "could not find request from %s" % p}
             assert req.state == db.RequestState.purchased
             req.state = db.RequestState.unloaded
             count += 1
-        elif parts[0] == "new" and len(parts) == 2 and parts[1].isdigit() and params[p] == "on":
-            itemid = int(parts[1])
-            locationid = params.get("location.%d" % itemid)
-            if locationid is None:
-                return {"template": "error.html", "message": "could not parse locationid"}
-            quantity, unit = parse_quantity(params.get("quantity.%d" % itemid))
+
+            quantity, unit = parse_quantity(params.get("quantity.%d" % req.uid))
             if quantity is None:
                 return {"template": "error.html", "message": "could not parse quantity"}
-            date = params.get("date.%d" % itemid)
-            if date is None:
-                return {"template": "error.html", "message": "could not find date"}
             db.add_no_commit(db.Inventory(
-                itemid = itemid,
-                locationid = locationid,
+                itemid = req.itemid,
+                locationid = req.procurement_location,
                 quantity = quantity,
                 unit = unit,
-                measurement = date,
+                measurement = trip_dates[req.tripid],
                 full_inventory = False,
             ))
             count += 1
