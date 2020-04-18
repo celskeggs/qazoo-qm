@@ -772,7 +772,11 @@ def retire_purchase_submit(user, write_access, params):
             req.state = db.RequestState.unloaded
             count += 1
 
-            quantity, unit = parse_quantity(params.get("quantity.%d" % req.uid))
+            qs = params.get("quantity.%d" % req.uid)
+            if qs == "none":
+                continue
+
+            quantity, unit = parse_quantity()
             if quantity is None:
                 return {"template": "error.html", "message": "could not parse quantity"}
             db.add_no_commit(db.Inventory(
