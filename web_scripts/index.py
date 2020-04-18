@@ -750,7 +750,7 @@ def purchase_retirement_list(user, write_access, params):
 
     # line to represent the request
     rows = [[
-        ("",                          "", "", r.uid                              ),
+        ("",                          "", "", str(r.uid)                         ),
         ("",                          "", "", items[r.itemid]                    ),
         ("",                          "", "", render_quantity(r.quantity, r.unit)),
         ("",                          "", "", r.comments                         ),
