@@ -776,7 +776,7 @@ def retire_purchase_submit(user, write_access, params):
             if qs == "none":
                 continue
 
-            quantity, unit = parse_quantity()
+            quantity, unit = parse_quantity(qs)
             if quantity is None:
                 return {"template": "error.html", "message": "could not parse quantity"}
             db.add_no_commit(db.Inventory(
