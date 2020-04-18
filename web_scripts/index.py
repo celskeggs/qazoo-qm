@@ -744,6 +744,8 @@ def purchase_retirement_list(user, write_access, params):
         ("checkbox", "retire.%d" % r.uid, "", ""                                 ),
     ] for r in requests]
 
+    rows.sort(key=lambda r: r[1])
+
     instructions = "WARNING: anything marked as 'substituted' will not be handled here, and must be reviewed manually! Additionally, not all 'purchased' items are shown here necessarily; confirm that none are left after completing this form."
 
     return editable_table("Inventory Retirement Form", ["Req ID", "Item Name", "Req Comment", "Procurement Comment", "Req Quantity", "Inventory Location", "Date", "Done?"], rows, action=("?mode=retire_purchase_submit" if write_access else None), instructions=instructions, optionsets=optionsets)
