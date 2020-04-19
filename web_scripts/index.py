@@ -537,7 +537,7 @@ def unload_processing(user, write_access, params):
         ] for i in objects
     ]
     rows.sort(key=lambda r: (r[2][3] or "", r[3][3] or ""))
-    action = "?mode=request_procurement_update&trip=%d" % trip.uid
+    action = "?mode=request_unload_update&trip=%d" % trip.uid
     return editable_table("Unloading Processing List for " + str(trip.date), columns, rows, action=action, optionsets=optionsets, onedit=True)
 
 def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allowable_states):
@@ -719,6 +719,22 @@ def request_procurement_update(user, write_access, params):
         return res
     nparams = {"trip": params["trip"]}
     return request_procurement_dispatching(user, write_access, nparams)
+
+@mode
+def request_unload_update(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+    res = handle_request_updates(user, write_access, params, trip, require_edit=True, procurement_only=True)
+    if res is not None:
+        return res
+    nparams = {"trip": params["trip"]}
+    return unload_processing(user, write_access, nparams)
 
 def build_latest_inventory(*filter_queries):
     inventory = db.query(db.Inventory).filter(*filter_queries).order_by(db.Inventory.measurement).all()
