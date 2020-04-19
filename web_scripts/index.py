@@ -477,7 +477,7 @@ def request_procurement_dispatching(user, write_access, params):
         [
             ("checkbox",                           "edit.%d" % i.uid, "",                        False                                ),
             ("",                                                  "", "",                        i.uid                                ),
-            ("",                                                  "", "",                        get_by_id(locations, likely_locations.get(i.itemid))),
+            ("",                                                  "", "",                        likely_locations.get(i.itemid, "")   ),
             ("",                                                  "", "",                        get_by_id(items, i.itemid)           ),
             ("",                                                  "", "",                        render_quantity(i.quantity, i.unit)  ),
             ("",                                                  "", "",                        i.contact                            ),
