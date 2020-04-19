@@ -326,6 +326,7 @@ def requests(user, write_access, params):
         "reservelink": "?mode=reservation_preparation&trip=%d" % (trip.uid),
         "submitdraftlink": "?mode=submit_drafts&trip=%d" % (trip.uid),
         "procurementlink": "?mode=request_procurement_dispatching&trip=%d" % (trip.uid),
+        "unloadlink": "?mode=unload_processing&trip=%d" % (trip.uid),
         "count": len(objects),
     }
     return editable_table("Request Review List for " + str(trip.date), columns, rows, instructions=instructions, action=action, optionsets=optionsets, onedit=True, wrap=wrap, addspans=spans)
@@ -492,6 +493,52 @@ def request_procurement_dispatching(user, write_access, params):
     rows.sort(key=lambda r: (r[2][3] or "", r[3][3] or ""))
     action = "?mode=request_procurement_update&trip=%d" % trip.uid
     return editable_table("Procurement Dispositioning List for " + str(trip.date), columns, rows, action=action, optionsets=optionsets, onedit=True)
+
+@mode
+def unload_processing(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    tripid = int_or_none(params, "trip")
+    if tripid is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+    trip = get_shopping_trip(tripid)
+    if trip is None:
+        return {"template": "error.html", "message": "unrecognized trip ID"}
+
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+
+    locations = {l.uid: l.name for l in db.query(db.Location).all()}
+    location_options = [("", "")] + sorted(locations.items())
+
+    objects = db.query(db.Request).filter(db.Request.tripid == tripid, db.Request.state == db.RequestState.to_purchase).all()
+
+    optionsets = {
+        "locations": location_options,
+    }
+
+    columns = ["Edit?", "ID", "Item Name", "Quantity", "Contact", "Cost Object", "State", "Comments", "Procurement Comments", "Procurement Location"]
+
+    # needs a "likely location" column
+
+    rows = [
+        [
+            ("checkbox",                           "edit.%d" % i.uid, "",                        False                                ),
+            ("",                                                  "", "",                        i.uid                                ),
+            ("",                                                  "", "",                        get_by_id(items, i.itemid)           ),
+            ("",                                                  "", "",                        render_quantity(i.quantity, i.unit)  ),
+            ("",                                                  "", "",                        i.contact                            ),
+            ("",                                                  "", "",                        costs.get(i.costid, "#REF?")         ),
+            ("dropdown",                          "state.%d" % i.uid, state_options(i, qm=True), i.state                              ),
+            ("",                                                  "", "",                        i.comments                           ),
+            ("text",               "procurement_comments.%d" % i.uid, "",                        i.procurement_comments               ),
+            ("dropdown-optionset", "procurement_location.%d" % i.uid, "locations",               i.procurement_location               ),
+        ] for i in objects
+    ]
+    rows.sort(key=lambda r: (r[2][3] or "", r[3][3] or ""))
+    action = "?mode=request_procurement_update&trip=%d" % trip.uid
+    return editable_table("Unloading Processing List for " + str(trip.date), columns, rows, action=action, optionsets=optionsets, onedit=True)
 
 def create_request_from_params(params, suffix, tripid, contact, allowable_cost_ids, allowable_states):
     formal_name = int_or_none(params, "formal_name" + suffix)
