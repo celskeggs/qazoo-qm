@@ -68,7 +68,8 @@
         }
     {% endif %}
     {% if autoscroll %}
-        document.body.scrollTop = document.body.scrollHeight;
+        var elem = (document.scrollingElement || document.body);
+        elem.scrollTop = elem.scrollHeight;
     {% endif %}
     };
     </script>
