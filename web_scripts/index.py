@@ -1253,20 +1253,20 @@ def split_costs(user, write_access, params):
     rows = [
         [
             ("",                 "", "",             "All"),
-            ("",                 "", "",             ""),
-            ("dropdown", "trip.all", trips_dropdown, ""),
+            ("",                 "", "",             ""   ),
+            ("dropdown", "trip.all", trips_dropdown, ""   ),
         ],
         [
             ("",                 "", "",             "All"),
-            ("",                 "", "",             ""),
-            ("text", "describe.all", "",             ""),
+            ("",                 "", "",             ""   ),
+            ("text", "describe.all", "",             ""   ),
         ],
     ]
     rows += [
         [
-            ("",                   "", "", i.description),
-            ("checkbox", "include.%d", "", True         ),
-            ("",                   "", "", ""),
+            ("",                           "", "", i.description),
+            ("checkbox", "include.%d" % i.uid, "", True         ),
+            ("",                           "", "", ""           ),
         ] for i in split_among if i.uid != split_obj.uid
     ]
 
