@@ -33,15 +33,10 @@ def build_table(objects, *columns):
     return [[(getattr(obj, col) if type(col) == str else col(obj)) for col in columns] for obj in objects]
 
 def simple_table(title, columns, rows, urls=None, urli=0, instructions=None):
-    if instructions is None:
-        instructions = ""
-    elif type(instructions) is dict:
-        instructions = jinja2.Markup(render(instructions))
     if urls is None:
         urls = [None] * len(rows)
-    rows = [[("", "url", url, "", cell) if ci == urli and url is not None else ("", "", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
-    headers = [[(None, col) for col in columns]]
-    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
+    rows = [[("url", url, "", cell) if ci == urli and url is not None else ("", "", "", cell) for ci, cell in enumerate(row)] for url, row in zip(urls, rows)]
+    return editable_table(title, columns, rows, instructions=instructions)
 
 def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None, addspans=True, autoscroll=False):
     if instructions is None:
@@ -1106,13 +1101,27 @@ def review_balances(user, write_access, params):
         balances[transaction.debit_id] += transaction.amount
         balances[transaction.credit_id] -= transaction.amount
 
-    rows = build_table(
-        objects,
-        "description",
-        "venmo",
-        lambda i: "$%.2f" % balances[i.uid],
-    )
-    return simple_table("Balances", ["Cost Object", "Venmo", "Amount Owed"], rows)
+    if write_access:
+        columns = ["Cost Object", "Venmo", "Amount Owed", "Explain", "Split"]
+        rows = [
+            [
+                ("", "", "", i.description),
+                ("", "", "", i.venmo),
+                ("", "", "", "$%.2f" % balances[i.uid]),
+                ("url", "?mode=personal_transactions&impersonate=%s" % i.kerberos, "", "Transactions") if i.kerberos else ("", "", "", ""),
+                ("url", "?mode=split_costs&object=%d" % i.uid, "", "Split Balance") if not i.kerberos and balances[i.uid] > 0 else ("", "", "", ""),
+            ] for i in objects
+        ]
+    else:
+        columns = ["Cost Object", "Venmo", "Amount Owed"]
+        rows = [
+            [
+                ("", "", "", i.description),
+                ("", "", "", i.venmo),
+                ("", "", "", "$%.2f" % balances[i.uid]),
+            ] for i in objects
+        ]
+    return editable_table("Balances", columns, rows)
 
 @mode
 def review_transactions(user, write_access, params):
@@ -1208,6 +1217,124 @@ def add_transaction(user, write_access, params):
         description = description,
     )
     db.add(new_transaction)
+
+    params["scroll"] = "bottom"
+    return review_transactions(user, write_access, params)
+
+@mode
+def split_costs(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    date_by_trip = {st.uid: st.date for st in db.query(db.ShoppingTrip).all()}
+    trips_dropdown = [("", "")] + sorted(date_by_trip.items())
+
+    objid = int_or_none(params, "object")
+    if objid is None:
+        return {"template": "error.html", "message": "invalid object ID"}
+    split_objs = [co for co in db.query(db.CostObject).filter_by(uid=objid).all()]
+    if not split_objs:
+        return {"template": "error.html", "message": "no cost object found for user"}
+    if len(split_objs) != 1:
+        return {"template": "error.html", "message": "more than one cost object found for user"}
+    split_obj = split_objs[0]
+
+    transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == split_obj, db.Transaction.debit_id == split_obj)).all()
+    total = sum(i.amount if i.debit_id == user_id else -i.amount for i in transactions)
+
+    if total <= 0:
+        return {"template": "error.html", "message": "no cost to split! (total = $%.2f)" % total}
+
+    split_among = db.query(db.CostObject).filter(db.CostObject.kerberos != None).all()
+
+    instructions = "Splitting $%.2f among selected cost objects" % total
+
+    columns = ["Cost Object", "Include?", "Trip Date"]
+    rows = [
+        [
+            ("",                 "", "",             "All"),
+            ("",                 "", "",             ""),
+            ("dropdown", "trip.all", trips_dropdown, ""),
+        ],
+        [
+            ("",                 "", "",             "All"),
+            ("",                 "", "",             ""),
+            ("text", "describe.all", "",             ""),
+        ],
+    ]
+    rows += [
+        [
+            ("",                   "", "", i.description),
+            ("checkbox", "include.%d", "", True         ),
+            ("",                   "", "", ""),
+        ] for i in split_among if i.uid != split_obj.uid
+    ]
+
+    return editable_table("Splitting costs from cost object " + split_obj.description, columns, rows, instructions=instructions, action="?mode=split_costs_do&object=%d" % objid)
+
+@mode
+def split_costs_do(user, write_access, params):
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    if not write_access:
+        return {"template": "error.html", "message": "no QM access"}
+
+    objid = int_or_none(params, "object")
+    if objid is None:
+        return {"template": "error.html", "message": "invalid object ID"}
+    split_objs = [co for co in db.query(db.CostObject).filter_by(uid=objid).all()]
+    if not split_objs:
+        return {"template": "error.html", "message": "no cost object found for user"}
+    if len(split_objs) != 1:
+        return {"template": "error.html", "message": "more than one cost object found for user"}
+    split_obj = split_objs[0]
+
+    trip_id = int_or_none(params, "trip.all")
+    if trip_id is not None and get_shopping_trip(trip_id) is None:
+        return {"template": "error.html", "message": "invalid trip ID"}
+
+    description = params.get("describe.all", "").strip()
+    if not description:
+        return {"template": "error.html", "message": "invalid description"}
+
+    transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == split_obj, db.Transaction.debit_id == split_obj)).all()
+    total = sum(i.amount if i.debit_id == user_id else -i.amount for i in transactions)
+
+    split_among = db.query(db.CostObject).filter(db.CostObject.kerberos != None).all()
+
+    selected_ids = set()
+    for param in params:
+        if param.startswith("include.") and param[8:].isdigit() and params[param] == "on":
+            selected_ids.add(int(param[8:]))
+    split_among = [co for co in split_among if co.uid in selected_ids]
+
+    if len(split_among) != len(selected_ids):
+        return {"template": "error.html", "message": "invalid selected ID"}
+
+    if len(split_among) < 2:
+        return {"template": "error.html", "message": "must select at least two cost objects to split costs between"}
+
+    per_person = (round(total * 100) // len(split_among)) / 100
+
+    if total <= 0 or per_person < 0.01:
+        return {"template": "error.html", "message": "not enough cost to split! (total = $%.2f)" % total}
+
+    credit_id = split_obj.uid
+    for obj in split_among:
+        debit_id = obj.uid
+
+        new_transaction = db.Transaction(
+            credit_id = credit_id,
+            debit_id = debit_id,
+            amount = per_person,
+            trip_id = trip_id,
+            request_id = None,
+            description = description,
+        )
+        db.add_no_commit(new_transaction)
+
+    db.commit()
 
     params["scroll"] = "bottom"
     return review_transactions(user, write_access, params)
