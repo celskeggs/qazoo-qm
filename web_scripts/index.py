@@ -1240,7 +1240,7 @@ def split_costs(user, write_access, params):
     split_obj = split_objs[0]
 
     transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == split_obj.uid, db.Transaction.debit_id == split_obj.uid)).all()
-    total = sum(i.amount if i.debit_id == split_object.uid else -i.amount for i in transactions)
+    total = sum(i.amount if i.debit_id == split_obj.uid else -i.amount for i in transactions)
 
     if total <= 0:
         return {"template": "error.html", "message": "no cost to split! (total = $%.2f)" % total}
