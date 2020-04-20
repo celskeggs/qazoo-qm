@@ -9,7 +9,7 @@
     td { padding: 5px; }
     .header td { border: 2px solid black; }
     </style>
-    {% if optionsets or onedit %}
+    {% if optionsets or onedit or autoscroll %}
     <script>
     {% if onedit %}
     function on_edit(e) {
@@ -66,6 +66,9 @@
         for (var i = 0; i < selects.length; i++) {
             selects[i].addEventListener('input', on_edit);
         }
+    {% endif %}
+    {% if autoscroll %}
+        document.body.scrollTop = document.body.scrollHeight;
     {% endif %}
     };
     </script>

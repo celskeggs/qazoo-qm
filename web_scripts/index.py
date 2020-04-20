@@ -43,7 +43,7 @@ def simple_table(title, columns, rows, urls=None, urli=0, instructions=None):
     headers = [[(None, col) for col in columns]]
     return {"template": "simpletable.html", "title": title, "headers": headers, "rows": rows, "instructions": instructions, "creation": None, "action": None, "optionsets": None}
 
-def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None, addspans=True):
+def editable_table(title, columns, rows, instructions=None, creation=None, action=None, optionsets=None, onedit=False, wrap=None, addspans=True, autoscroll=False):
     if instructions is None:
         instructions = ""
     elif type(instructions) is dict:
@@ -63,7 +63,7 @@ def editable_table(title, columns, rows, instructions=None, creation=None, actio
         for row in rows:
             wrapped_rows.append(row[:wrap])
             wrapped_rows.append(row[wrap:])
-    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": wrapped_rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None, "onedit": onedit}
+    return {"template": "simpletable.html", "title": title, "headers": headers, "rows": wrapped_rows, "instructions": instructions, "creation": creation, "action": action, "optionsets": json.dumps(optionsets) if optionsets else None, "onedit": onedit, "autoscroll": autoscroll}
 
 @mode
 def cost(user, write_access, params):
@@ -1157,7 +1157,7 @@ def review_transactions(user, write_access, params):
     else:
         creation = []
 
-    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action=("?mode=add_transaction" if write_access else None))
+    return editable_table("Transactions", ["ID", "Credit", "Debit", "Amount", "Trip Date", "Request ID", "Item Name", "Description", "Added"], rows, creation=creation, action=("?mode=add_transaction" if write_access else None), autoscroll=(params.get("scroll") == "bottom"))
 
 @mode
 def add_transaction(user, write_access, params):
@@ -1209,6 +1209,7 @@ def add_transaction(user, write_access, params):
     )
     db.add(new_transaction)
 
+    params["scroll"] = "bottom"
     return review_transactions(user, write_access, params)
 
 @mode
