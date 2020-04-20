@@ -1283,7 +1283,7 @@ def split_costs_do(user, write_access, params):
     objid = int_or_none(params, "object")
     if objid is None:
         return {"template": "error.html", "message": "invalid object ID"}
-    split_objs = [co for co in db.query(db.CostObject).filter_by(uid=objid).all()]
+    split_objs = [co.uid for co in db.query(db.CostObject).filter_by(uid=objid).all()]
     if not split_objs:
         return {"template": "error.html", "message": "no cost object found for user"}
     if len(split_objs) != 1:
@@ -1320,7 +1320,7 @@ def split_costs_do(user, write_access, params):
     if total <= 0 or per_person < 0.01:
         return {"template": "error.html", "message": "not enough cost to split! (total = $%.2f)" % total}
 
-    credit_id = split_obj.uid
+    credit_id = split_obj
     for obj in split_among:
         debit_id = obj.uid
 
