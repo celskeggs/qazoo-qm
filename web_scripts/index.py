@@ -1239,7 +1239,7 @@ def split_costs(user, write_access, params):
         return {"template": "error.html", "message": "more than one cost object found for user"}
     split_obj = split_objs[0]
 
-    transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == split_obj, db.Transaction.debit_id == split_obj)).all()
+    transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == split_obj.uid, db.Transaction.debit_id == split_obj.uid)).all()
     total = sum(i.amount if i.debit_id == user_id else -i.amount for i in transactions)
 
     if total <= 0:
