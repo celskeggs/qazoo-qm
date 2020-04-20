@@ -1299,7 +1299,7 @@ def split_costs_do(user, write_access, params):
         return {"template": "error.html", "message": "invalid description"}
 
     transactions = db.query(db.Transaction).filter(db.sqlalchemy.or_(db.Transaction.credit_id == split_obj, db.Transaction.debit_id == split_obj)).all()
-    total = sum(i.amount if i.debit_id == split_object.uid else -i.amount for i in transactions)
+    total = sum(i.amount if i.debit_id == split_obj else -i.amount for i in transactions)
 
     split_among = db.query(db.CostObject).filter(db.CostObject.kerberos != None).all()
 
