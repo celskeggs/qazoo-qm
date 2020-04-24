@@ -1434,6 +1434,31 @@ def coop_item_summary(user, write_access, params):
     return simple_table("Co-op Request Summary", columns, rows)
 
 @mode
+def all_communal_requests(user, write_access, params):
+    items = item_names_by_uids()
+    costs = cost_objects_by_uids()
+
+    communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
+    locations = {l.uid: l.name for l in db.query(db.Location).all()}
+    objects = db.query(db.Request).filter(db.Request.costid.in_(communal_costids), db.Request.coop_date == None, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected, db.RequestState.unavailable])).all()
+
+    columns = ["ID", "Item Name", "Quantity", "Cost Object", "State", "Procurement Comments", "Procurement Location"]
+    rows = [
+        [
+            i.uid,
+            get_by_id(items, i.itemid),
+            render_quantity(i.quantity, i.unit),
+            costs.get(i.costid, "#REF?"),
+            i.state,
+            i.procurement_comments,
+            get_by_id(locations, i.procurement_location),
+        ] for i in objects
+    ]
+    rows.reverse()
+
+    return simple_table("Complete Communal Request List", columns, rows)
+
+@mode
 def debug(user, write_access, params):
     return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([(k, sorted(v) if type(v) == list else v) for k, v in params.items()]))
 
