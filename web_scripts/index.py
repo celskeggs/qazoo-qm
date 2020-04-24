@@ -1412,6 +1412,28 @@ def submit_drafts_confirmed(user, write_access, params):
     return requests(user, write_access, {"trip": params["trip"]})
 
 @mode
+def coop_item_summary(user, write_access, params):
+    columns = ["Trip", "Co-Op Date", "Item Count"]
+
+    trip_dates = {t.uid: t.date for t in db.query(db.ShoppingTrip).all()}
+
+    stats = {}
+    for r in db.query(db.Request).filter(db.Request.coop_date != None, ~db.Request.state.in_([db.RequestState.rejected, db.RequestState.retracted])).all():
+        k = (r.tripid, r.coop_date)
+        stats[k] = stats.get(k,0) + 1
+
+    rows = [
+        [
+            trip_dates[tripid],
+            coop_date,
+            count
+        ] for (trip_dates, coop_date), count in stats.items()
+    ]
+    rows.sort()
+
+    return simple_table("Co-op Request Summary", columns, rows)
+
+@mode
 def debug(user, write_access, params):
     return simple_table("DEBUG DATA", ["Parameter Name", "Parameter Value"], sorted([(k, sorted(v) if type(v) == list else v) for k, v in params.items()]))
 
