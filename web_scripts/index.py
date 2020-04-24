@@ -1427,7 +1427,7 @@ def coop_item_summary(user, write_access, params):
             trip_dates[tripid],
             coop_date,
             count
-        ] for (trip_dates, coop_date), count in stats.items()
+        ] for (tripid, coop_date), count in stats.items()
     ]
     rows.sort()
 
