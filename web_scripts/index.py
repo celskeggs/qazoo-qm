@@ -1440,7 +1440,7 @@ def all_communal_requests(user, write_access, params):
 
     communal_costids = [co.uid for co in db.query(db.CostObject).filter_by(kerberos=None).all()]
     locations = {l.uid: l.name for l in db.query(db.Location).all()}
-    objects = db.query(db.Request).filter(db.Request.costid.in_(communal_costids), db.Request.coop_date == None, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected, db.RequestState.unavailable, db.Request.draft, db.Request.submitted])).all()
+    objects = db.query(db.Request).filter(db.Request.costid.in_(communal_costids), db.Request.coop_date == None, ~db.Request.state.in_([db.RequestState.retracted, db.RequestState.rejected, db.RequestState.unavailable, db.RequestState.draft, db.RequestState.submitted])).all()
 
     columns = ["ID", "Item Name", "Quantity", "Cost Object", "State", "Procurement Comments", "Procurement Location"]
     rows = [
