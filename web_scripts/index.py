@@ -375,7 +375,7 @@ def request_entry(user, write_access, params):
         ("",                                  "", "",               ""                   ),
         ("dropdown-optionset", "formal_name.new", "formal_options", ""                   ),
         ("text",             "informal_name.new", "",               ""                   ),
-        ("text",                  "quantity.new", "",               "0 oz"               ),
+        ("text",                  "quantity.new", "",               ""                   ),
         ("text",             "substitutions.new", "",               default_substitutions),
         ("dropdown-optionset", "cost_object.new", "cost_objects",   default_costid       ),
         ("date",                 "coop_date.new", "",               default_date         ),
