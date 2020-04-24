@@ -129,9 +129,9 @@ def item_types_update(user, write_access, params):
         count += 1
     if params.get("name.new"):
         new_itemtype = db.ItemType(
-            name = params["name.new"],
-            standard_unit = params.get("unit.new"),
-            aisle = params.get("aisle.new"),
+            name = params["name.new"].strip(),
+            standard_unit = params.get("unit.new","").strip() or None,
+            aisle = params.get("aisle.new","").strip() or None,
         )
         db.add(new_itemtype)
     elif count:
