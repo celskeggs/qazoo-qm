@@ -1,14 +1,14 @@
 {% if can_edit %}
+    <p>
     {% if edit %}
-        <p><a href="{{ editlink }}">Exit Edit view.</a></p>
+        <a href="{{ editlink }}">Exit Edit view.</a>
     {% else %}
-        <p><a href="{{ editlink }}">Go to Edit view.</a></p>
+        <a href="{{ editlink }}">Go to Edit view.</a>
     {% endif %}
-{% endif %}
-<p><a href="{{ shoppinglink }}">Print Shopping List</a></p>
-{% if can_edit %}
-<p><a href="{{ submitdraftlink }}">Submit all drafts</a></p>
-<p><a href="{{ procurementlink }}">Go to Procurement Processing form</a></p>
-<p><a href="{{ unloadlink }}">Go to Unloading Processing form</a></p>
+    | <a href="{{ submitdraftlink }}">Submit all drafts</a>
+    | <a href="{{ procurementlink }}">Go to Procurement Processing form</a>
+    | <a href="{{ unloadlink }}">Go to Unloading Processing form</a>
+    | <a href="{{ shoppinglink }}">Print Shopping List</a>
+    </p>
 {% endif %}
 <p>Found {{ count }} requests for this shopping trip:</p>
