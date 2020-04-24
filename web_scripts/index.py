@@ -1456,7 +1456,7 @@ def all_communal_requests(user, write_access, params):
     ]
     rows.reverse()
 
-    if len({r.costid for r in objects}) != 1:
+    if len({r.costid for r in objects}) == 1:
         # remove cost ID column if only one option used (the common case)
         del columns[3]
         for row in rows:
